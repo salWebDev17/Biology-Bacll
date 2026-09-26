@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>មេរៀនជីវវិទ្យា៖ ប្រូតេអ៊ីន - Wheel Spin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Khmer:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --accent: #27ae60;
+            --accent-hover: #219150;
+            --bg: #f4f7f6;
+            --card-bg: #ffffff;
+            --text: #333333;
+            --shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Noto Sans Khmer', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: var(--text);
+            line-height: 1.8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            background: var(--card-bg);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 30px;
+            text-align: center;
+        }
+
+        h1 {
+            color: var(--primary);
+            margin-bottom: 10px;
+            font-size: 1.8rem;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 1rem;
+        }
+
+        /* Wheel Container */
+        .wheel-container {
+            position: relative;
+            width: 320px;
+            height: 320px;
+            margin: 0 auto 30px;
+        }
+
+        /* Pointer */
+        .pointer {
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+            border-top: 40px solid #e74c3c;
+            z-index: 10;
+            filter: drop-shadow(0 3px 5px rgba(0,0,0,0.3));
+        }
+
+        /* Wheel */
+        .wheel {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 0 10px #fff, 0 0 0 15px var(--primary), 0 10px 30px rgba(0,0,0,0.4);
+            transition: transform 6s cubic-bezier(0.17, 0.67, 0.12, 0.99);
+        }
+
+        .wheel-inner {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        .wheel-segment {
+            position: absolute;
+            width: 50%;
+            height: 50%;
+            top: 0;
+            left: 50%;
+            transform-origin: 0% 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.4);
+            overflow: hidden;
+        }
+
+        .wheel-segment span {
+            position: absolute;
+            left: 15%;
+            top: 20%;
+            transform: rotate(0deg);
+            font-size: 0.85rem;
+            width: 90px;
+            text-align: left;
+            padding-left: 5px;
+            line-height: 1.2;
+        }
+
+        .wheel-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 70px;
+            height: 70px;
+            background: white;
+            border-radius: 50%;
+            z-index: 5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            box-shadow: 0 0 15px rgba(0,0,0,0.3), inset 0 0 10px rgba(0,0,0,0.1);
+            border: 3px solid var(--primary);
+        }
+
+        /* Spin Button */
+        .spin-btn {
+            background: linear-gradient(135deg, var(--accent), #16a085);
+            color: white;
+            border: none;
+            padding: 15px 45px;
+            font-size: 1.2rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Noto Sans Khmer', sans-serif;
+            font-weight: 700;
+            box-shadow: 0 4px 15px rgba(39, 174, 96, 0.4);
+            margin-bottom: 20px;
+        }
+
+        .spin-btn:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(39, 174, 96, 0.5);
+        }
+
+        .spin-btn:active:not(:disabled) {
+            transform: translateY(1px);
+        }
+
+        .spin-btn:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Question Card */
+        .question-card {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 16px;
+            padding: 25px;
+            margin-top: 20px;
+            text-align: left;
+            display: none;
+            animation: fadeIn 0.6s ease;
+            border-left: 6px solid var(--accent);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .question-card.active {
+            display: block;
+        }
+
+        .question-text {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+
+        .answer-btn {
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            font-size: 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            font-family: 'Noto Sans Khmer', sans-serif;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .answer-btn:hover {
+            background-color: var(--accent-hover);
+        }
+
+        .answer-content {
+            display: none;
+            background: #f0f9f4;
+            border-left: 4px solid var(--accent);
+            padding: 15px;
+            border-radius: 0 8px 8px 0;
+            margin-top: 15px;
+            animation: slideDown 0.4s ease;
+            line-height: 1.8;
+        }
+
+        .answer-content.show {
+            display: block;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .source-ref {
+            font-size: 0.8rem;
+            color: #888;
+            margin-top: 10px;
+            display: block;
+            text-align: right;
+            font-style: italic;
+        }
+
+        /* Sound toggle */
+        .sound-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #fff;
+            border: 2px solid var(--primary);
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            z-index: 100;
+        }
+
+        .sound-toggle:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .container {
+            position: relative;
+        }
+
+        /* Confetti */
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background: #f39c12;
+            position: absolute;
+            animation: fall 3s linear forwards;
+            z-index: 999;
+        }
+
+        @keyframes fall {
+            to {
+                transform: translateY(100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .container { padding: 20px 15px; }
+            h1 { font-size: 1.3rem; }
+            .wheel-container { width: 260px; height: 260px; }
+            .spin-btn { width: 100%; padding: 12px; font-size: 1rem; }
+            .wheel-segment span { font-size: 0.7rem; width: 70px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <button class="sound-toggle" id="soundToggle" title="បិទ/បើកសំឡេង">🔊</button>
+        
+        <h1>🧬 មេរៀនជីវវិទ្យា៖ ប្រូតេអ៊ីន</h1>
+        <p class="subtitle">បង្វិលកង់ដើម្បីទទួលបានសំណួរចោល</p>
+
+        <div class="wheel-container">
+            <div class="pointer"></div>
+            <div class="wheel" id="wheel">
+                <div class="wheel-inner" id="wheelInner">
+                    <!-- Segments generated by JS -->
+                </div>
+                <div class="wheel-center">🎯</div>
+            </div>
+        </div>
+
+        <button class="spin-btn" id="spinBtn">🎡 បង្វិលកង់</button>
+
+        <div class="question-card" id="questionCard">
+            <div class="question-text" id="questionText"></div>
+            <button class="answer-btn" id="toggleAnswerBtn">
+                <span>👁️</span> បង្ហាញចម្លើយ
+            </button>
+            <div class="answer-content" id="answerContent"></div>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            { q: "ហេតុអ្វីបានជាអាស៊ីតអាមីនេមានលក្ខណៈអាំផូទែ?", a: "ព្រោះវាជាអាំផូទែ ឬអាំផូលីត ដែលអាចធ្វើអន្តរកម្មជាអាស៊ីតផង និងជាបាសផង ដោយនៅក្នុងសូលុយស្យុងទឹក វាអាចបោះបង់ប្រូតុង (H⁺) ផង និងទទួលប្រូតុង (H⁺) ផង។", src: "សន្លឹកទី ១" },
+            { q: "តើនៅពេលណាអាស៊ីដអាមីនេក្លាយជាអ៊ីយ៉ុងឌីប៉ូលែ?", a: "នៅពេលអាស៊ីតអាមីនេស្ថិតនៅក្នុងសូលុយស្យុងទឹក (ឬនៅ pH = 7) ក្រុមការបុកស៊ីល (-COOH) បោះបង់ប្រូតុង ឯក្រុមអាមីន (-NH₂) ទទួលប្រូតុង បង្កើតបានជាអ៊ីយ៉ុងឌីប៉ូលែ។", src: "សន្លឹកទី ១" },
+            { q: "តើចំណងបុិបទីដកើតឡើងដូចម្តេច?", a: "ចំណងបុីបទីតកើតឡើងពីការភ្ជាប់គ្នារវាងក្រុមការបុកស៊ីល (-COOH) នៃអាស៊ីតអាមីនេមួយ ជាមួយក្រុមអាមីន (-NH₂) នៃអាស៊ីតអាមីនេមួយទៀត ដោយបាត់បង់ទឹកមួយម៉ូលេគុល។", src: "សន្លឹកទី ១" },
+            { q: "តើចំណងបុិបទីដជាអ្វី?", a: "គឺជាសម្ព័ន្ធកូវ៉ាឡង់ដែលកើតឡើងរវាងក្រុម (-COOH) នៃអាស៊ីតអាមីនេមួយ ជាមួយក្រុម (-NH₂) នៃអាស៊ីតអាមីនេមួយទៀត។", src: "សន្លឹកទី ២" },
+            { q: "តើនៅពេលណាដែលមានទម្រង់ ២, ៣, ៤ ប្រូតេអ៊ីន?", a: "នៅពេលច្រវ៉ាក់បុិបទីបមួយឬច្រើនបត់បែនជាច្រើនផ្នត់នោះបង្កើតបានជាទម្រង់ទី ២ ៣ ៤ នៃប្រូតេអ៊ីន។", src: "សន្លឹកទី ២" },
+            { q: "លំហាត់៖ ប្រូតេអ៊ីនមាន AA = 480 ។ តើមានចំណងបុិបទីដប៉ុន្មាន និងបាត់បង់ទឹកប៉ុន្មាន?", a: "ចំនួនចំណងបុិបទីត (L') = AA - 1 = 480 - 1 = 479 សម្ព័ន្ធប៉េបទីត។ ចំនួនម៉ូលេគុលទឹក = L' = 479 ម៉ូលេគុល។", src: "សន្លឹកទី ២" },
+            { q: "លំហាត់៖ ប្រូតេអ៊ីនមានចំណងបុិបទីត៊ដ 200 (L' = 200)។ តើមានអាស៊ីតអាមីនេប៉ុន្មាន និងបញ្ចេញទឹកប៉ុន្មាន?", a: "ចំនួនអាស៊ីតអាមីនេ (AA) = L' + 1 = 200 + 1 = 201។ ចំនួនម៉ូលេគុលទឹក = L' = 200 ម៉ូលេគុល។", src: "សន្លឹកទី ៣" },
+            { q: "តើលំដាប់តម្រៀបអាស៊ីតអាមីនេមានសារៈសំខាន់ដូចម្តេច?", a: "លំដាប់តម្រៀបអាស៊ីតអាមីនេមានសារៈសំខាន់ណាស់ ព្រោះវាជាអ្នកកំណត់ទម្រង់ និងនាទីរបស់ប្រូតេអ៊ីន។ ប្រសិនបើលំដាប់ប្រែប្រួល វានឹងធ្វើឱ្យទម្រង់ និងនាទីប្រែប្រួល ឬបាត់បង់។", src: "សន្លឹកទី ៤" },
+            { q: "តើប្រូតេអ៊ីនមានប៉ុន្មានកម្រិតទម្រង់? អ្វីខ្លះ?", a: "មាន ៤ កម្រិត គឺ៖ ទម្រង់ទី ១ (Primary), ទម្រង់ទី ២ (Secondary), ទម្រង់ទី ៣ (Tertiary), និងទម្រង់ទី ៤ (Quaternary)។", src: "សន្លឹកទី ៥" },
+            { q: "តើអ្វីជាទម្រង់ទី ១ នៃប្រូតេអ៊ីន?", a: "ជាច្រវាក់លីនេអ៊ែនៃអាស៊ីតអាមីនេដែលភ្ជាប់គ្នាដោយសម្ព័ន្ធប៉េបទីត។", src: "សន្លឹកទី ៥" },
+            { q: "តើអ្វីជា α-helix និង β-sheet?", a: "α-helix៖ ការតម្រៀបច្រវ៉ាក់ប៉ូលីបុិបទីបតាមទៅដោយតែមួយ។ β-sheet៖ ការតម្រៀបច្រវ៉ាក់ប៉ូលីប៉ុបទីបតាមទិសដៅផ្ទុយគ្នា។", src: "សន្លឹកទី ៥" },
+            { q: "ហេតុអ្វីបានជាផ្នត់ស្របរឹងមាំជាងមាត់មិនស្រប?", a: "ព្រោះមាត់មិនស្របមានទម្រង់សាំញ៉ាំដែលមានទិសដៅផ្ទុយគ្នា។", src: "សន្លឹកទី ៥" },
+            { q: "តើអ្វីជាទម្រង់ទី ៣ និងទម្រង់ទី ៤?", a: "ទម្រង់ទី ៣៖ បត់បែនច្រើនផ្នត់ក្លាយជាប្រូតេអ៊ីនគ្រាប់។ ទម្រង់ទី ៤៖ កើតចេញពីការរួមផ្សំច្រវាក់ប៉ូលីបុិបទីដ ៣ ឬ ៤។", src: "សន្លឹកទី ៦" },
+            { q: "តើប្រូតេអ៊ីនមាននាទីសំខាន់ៗអ្វីខ្លះ?", a: "មាននាទីជាអង់ស៊ីម, ដឹកជញ្ជូន, ទ្រទ្រង់/ទម្រង់, ការពារ (អង់ទីគ័រ), ចលករ, និងស្តុកទុក។", src: "សន្លឹកទី ៦" },
+            { q: "តើប្រូតេអ៊ីនកូឡាជែន (Collagen) មាននាទីអ្វី?", a: "ជាប្រូតេអ៊ីនទ្រទ្រង់ដ៏សំខាន់នៅក្នុងលិកាភ្ជាប់ ស្បែក និងឆ្អឹង។", src: "សន្លឹកទី ៦" },
+            { q: "តើកត្តាអ្វីខ្លះដែលនាំឱ្យប្រូតេអ៊ីនបាត់បង់ទម្រង់ដើម?", a: "រួមមាន សីតុណ្ហភាពខ្ពស់, ការប្រែប្រួល pH, វត្តមានធាតុគីមី ឬសារធាតុរលាយសរីរាង្គ, និងការកូរ ឬរំញ័រខ្លាំង។", src: "សន្លឹកទី ៨" },
+            { q: "តើការបាត់បង់ទម្រង់ដើមមានផលប៉ះពាល់អ្វី?", a: "ធ្វើឱ្យប្រូតេអ៊ីនបាត់បង់នាទីជីវសាស្ត្រ ព្រោះរូបរាង 3D ត្រូវបានបំផ្លាញ។", src: "សន្លឹកទី ៨" },
+            { q: "តើប្រូតេអ៊ីនសាមញ្ញ និងស្មុគស្មាញខុសគ្នាយ៉ាងដូចម្តេច?", a: "សាមញ្ញ៖ កើតពីអាស៊ីតអាមីនេសុទ្ធ។ ស្មុគស្មាញ៖ កើតពីប្រូតេអ៊ីនសាមញ្ញ ផ្សំជាមួយ Prosthetic group។", src: "សន្លឹកទី ៨" },
+            { q: "តើអង់ស៊ីមជាអ្វី? មាននាទីដូចម្តេច?", a: "អង់ស៊ីម គឺជាកាតាលីករជីវសាស្ត្រ មាននាទីរំលឿនប្រតិកម្មគីមី ដោយបញ្ចុះថាមពលសកម្មកម្ម។", src: "សន្លឹកទី ៨" },
+            { q: "តើ pH និងសីតុណ្ហភាពមានឥទ្ធិពលយ៉ាងណា?", a: "pH ខ្លាំងប៉ះពាល់សម្ព័ន្ធអ៊ីដ្រូសែន និងអ៊ីយ៉ុង។ សីតុណ្ហភាពខ្ពស់បង្កើនថាមពលស៊ីនេទិច និងបំផ្លាញសម្ព័ន្ធខ្សោយៗ។", src: "សន្លឹកទី ៩" },
+            { q: "តើការកកកើននៃប្រូតេអ៊ីន (Coagulation) ជាអ្វី?", a: "ជាដំណើរការដែលប្រូតេអ៊ីនរលាយប្រែទៅជាកក ឬមិនរលាយ បន្ទាប់ពីបាត់បង់ទម្រង់ដើម។", src: "សន្លឹកទី ៩" }
+        ];
+
+        // ==================== ពណ៌កង់ ====================
+        const colors = [
+            '#e74c3c', '#3498db', '#27ae60', '#f39c12', 
+            '#9b59b6', '#1abc9c', '#e67e22', '#34495e',
+            '#c0392b', '#2980b9', '#16a085', '#d35400'
+        ];
+
+        // ==================== Sound Manager (Web Audio API) ====================
+        class SoundManager {
+            constructor() {
+                this.ctx = null;
+                this.enabled = true;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            }
+
+            // សំឡេង Tick ពេលកង់បង្វិល
+            playTick() {
+                if (!this.enabled) return;
+                this.init();
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(800 + Math.random() * 400, this.ctx.currentTime);
+                gain.gain.setValueAtTime(0.05, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.05);
+                osc.start(this.ctx.currentTime);
+                osc.stop(this.ctx.currentTime + 0.05);
+            }
+
+            // សំឡេងឈ្នះ
+            playWin() {
+                if (!this.enabled) return;
+                this.init();
+                const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+                notes.forEach((freq, i) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime + i * 0.1);
+                    gain.gain.setValueAtTime(0, this.ctx.currentTime + i * 0.1);
+                    gain.gain.linearRampToValueAtTime(0.15, this.ctx.currentTime + i * 0.1 + 0.02);
+                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + i * 0.1 + 0.3);
+                    osc.start(this.ctx.currentTime + i * 0.1);
+                    osc.stop(this.ctx.currentTime + i * 0.1 + 0.3);
+                });
+            }
+
+            // សំឡេងចុចប៊ូតុង
+            playClick() {
+                if (!this.enabled) return;
+                this.init();
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(600, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(200, this.ctx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.1);
+                osc.start(this.ctx.currentTime);
+                osc.stop(this.ctx.currentTime + 0.1);
+            }
+
+            // សំឡេងបង្ហាញចម្លើយ
+            playReveal() {
+                if (!this.enabled) return;
+                this.init();
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(400, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(800, this.ctx.currentTime + 0.15);
+                gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.2);
+                osc.start(this.ctx.currentTime);
+                osc.stop(this.ctx.currentTime + 0.2);
+            }
+        }
+
+        const sound = new SoundManager();
+
+        // ==================== បង្កើតកង់ ====================
+        const wheelInner = document.getElementById('wheelInner');
+        const wheel = document.getElementById('wheel');
+        const segmentCount = questions.length;
+        const anglePerSegment = 360 / segmentCount;
+
+        function buildWheel() {
+            wheelInner.innerHTML = '';
+            questions.forEach((q, i) => {
+                const segment = document.createElement('div');
+                segment.className = 'wheel-segment';
+                const startAngle = i * anglePerSegment;
+                segment.style.transform = `rotate(${startAngle}deg)`;
+                segment.style.background = colors[i % colors.length];
+                segment.style.clipPath = `polygon(0 0, 100% 0, 100% 100%, 0 100%)`;
+                
+                // បង្កើតរូបរាងកង់ដោយប្រើ conic gradient ជំនួស
+                // ប៉ុន្តែយើងប្រើវិធីសាស្ត្រ clip-path ជាមួយ transform
+                // សម្រាប់ភាពងាយស្រួល យើងបង្កើត wedge ដោយប្រើ SVG ជំនួស
+                wheelInner.innerHTML = '';
+            });
+
+            // ប្រើវិធីសាស្ត្រ SVG សម្រាប់កង់ដែលរលូនជាង
+            const svgNS = "http://www.w3.org/2000/svg";
+            const svg = document.createElementNS(svgNS, "svg");
+            svg.setAttribute("viewBox", "0 0 200 200");
+            svg.style.width = "100%";
+            svg.style.height = "100%";
+            svg.style.transform = "rotate(-90deg)";
+
+            const cx = 100, cy = 100, r = 100;
+            const angleStep = (2 * Math.PI) / segmentCount;
+
+            questions.forEach((q, i) => {
+                const startAngle = i * angleStep;
+                const endAngle = (i + 1) * angleStep;
+
+                const x1 = cx + r * Math.cos(startAngle);
+                const y1 = cy + r * Math.sin(startAngle);
+                const x2 = cx + r * Math.cos(endAngle);
+                const y2 = cy + r * Math.sin(endAngle);
+
+                const largeArc = angleStep > Math.PI ? 1 : 0;
+
+                const path = document.createElementNS(svgNS, "path");
+                path.setAttribute("d", `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2} Z`);
+                path.setAttribute("fill", colors[i % colors.length]);
+                path.setAttribute("stroke", "#fff");
+                path.setAttribute("stroke-width", "1");
+                svg.appendChild(path);
+
+                // បន្ថែមលេខ
+                const midAngle = startAngle + angleStep / 2;
+                const textR = r * 0.65;
+                const tx = cx + textR * Math.cos(midAngle);
+                const ty = cy + textR * Math.sin(midAngle);
+
+                const text = document.createElementNS(svgNS, "text");
+                text.setAttribute("x", tx);
+                text.setAttribute("y", ty);
+                text.setAttribute("text-anchor", "middle");
+                text.setAttribute("dominant-baseline", "middle");
+                text.setAttribute("fill", "white");
+                text.setAttribute("font-size", "11");
+                text.setAttribute("font-weight", "bold");
+                text.setAttribute("font-family", "Noto Sans Khmer, sans-serif");
+                text.setAttribute("transform", `rotate(90, ${tx}, ${ty})`);
+                text.textContent = (i + 1);
+                svg.appendChild(text);
+            });
+
+            wheelInner.appendChild(svg);
+        }
+
+        buildWheel();
+
+        // ==================== Spin Logic ====================
+        let currentRotation = 0;
+        let isSpinning = false;
+        let selectedIndex = -1;
+
+        const spinBtn = document.getElementById('spinBtn');
+        const questionCard = document.getElementById('questionCard');
+        const questionText = document.getElementById('questionText');
+        const toggleAnswerBtn = document.getElementById('toggleAnswerBtn');
+        const answerContent = document.getElementById('answerContent');
+
+        function spinWheel() {
+            if (isSpinning) return;
+            isSpinning = true;
+            spinBtn.disabled = true;
+            spinBtn.textContent = '🎡 កំពុងបង្វិល...';
+            sound.playClick();
+
+            // បិទចម្លើយចាស់
+            answerContent.classList.remove('show');
+            toggleAnswerBtn.innerHTML = '<span>👁️</span> បង្ហាញចម្លើយ';
+            questionCard.classList.remove('active');
+
+            // ជ្រើសរើសសំណួរចោល
+            const randomIndex = Math.floor(Math.random() * questions.length);
+            selectedIndex = randomIndex;
+
+            // គណនាមុំដែលត្រូវបង្វិល
+            const segmentAngle = 360 / segmentCount;
+            const targetAngle = 360 - (randomIndex * segmentAngle + segmentAngle / 2);
+            const extraSpins = 360 * (5 + Math.floor(Math.random() * 3));
+            const totalRotation = currentRotation + extraSpins + (targetAngle - (currentRotation % 360));
+
+            currentRotation = totalRotation;
+            wheel.style.transform = `rotate(${totalRotation}deg)`;
+
+            // លេងសំឡេង Tick អំឡុងពេលបង្វិល
+            let tickCount = 0;
+            const maxTicks = 40;
+            const tickInterval = setInterval(() => {
+                sound.playTick();
+                tickCount++;
+                if (tickCount >= maxTicks) {
+                    clearInterval(tickInterval);
+                }
+            }, 120);
+
+            // បន្ទាប់ពីបង្វិលចប់
+            setTimeout(() => {
+                clearInterval(tickInterval);
+                sound.playWin();
+                displayQuestion(selectedIndex);
+                spinBtn.disabled = false;
+                spinBtn.textContent = '🎡 បង្វិលម្តងទៀត';
+                isSpinning = false;
+                createConfetti();
+            }, 6000);
+        }
+
+        function displayQuestion(index) {
+            const q = questions[index];
+            questionText.textContent = q.q;
+            answerContent.innerHTML = q.a + `<span class="source-ref">${q.src}</span>`;
+            questionCard.classList.add('active');
+            answerContent.classList.remove('show');
+            toggleAnswerBtn.innerHTML = '<span>👁️</span> បង្ហាញចម្លើយ';
+        }
+
+        function toggleAnswer() {
+            sound.playReveal();
+            if (answerContent.classList.contains('show')) {
+                answerContent.classList.remove('show');
+                toggleAnswerBtn.innerHTML = '<span>👁️</span> បង្ហាញចម្លើយ';
+            } else {
+                answerContent.classList.add('show');
+                toggleAnswerBtn.innerHTML = '<span>🙈</span> បិទចម្លើយ';
+            }
+        }
+
+        // ==================== Confetti Effect ====================
+        function createConfetti() {
+            const colorsConfetti = ['#e74c3c', '#3498db', '#27ae60', '#f39c12', '#9b59b6', '#1abc9c'];
+            for (let i = 0; i < 30; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.top = '-10px';
+                confetti.style.background = colorsConfetti[Math.floor(Math.random() * colorsConfetti.length)];
+                confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+                confetti.style.animationDuration = (2 + Math.random() * 2) + 's';
+                confetti.style.animationDelay = Math.random() * 0.5 + 's';
+                document.body.appendChild(confetti);
+                setTimeout(() => confetti.remove(), 4000);
+            }
+        }
+        // ==================== Sound Toggle ====================
+        const soundToggle = document.getElementById('soundToggle');
+        soundToggle.addEventListener('click', () => {
+            sound.enabled = !sound.enabled;
+            soundToggle.textContent = sound.enabled ? '🔊' : '🔇';
+            if (sound.enabled) {
+                sound.init();
+                sound.playClick();
+            }
+        });
+
+        // ==================== Event Listeners ====================
+        spinBtn.addEventListener('click', spinWheel);
+        toggleAnswerBtn.addEventListener('click', toggleAnswer);
+
+        // ចាប់ផ្ដើម AudioContext ពេលចុចលើកដំបូង
+        document.addEventListener('click', () => sound.init(), { once: true });
+    </script>
+
+</body>
+</html>
