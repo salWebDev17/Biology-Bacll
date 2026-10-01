@@ -36,6 +36,19 @@ body{margin:0;background:var(--bg);color:var(--fg);font-family:"Noto Sans Khmer"
 .q{font-weight:700;margin-bottom:8px;line-height:1.5}
 .ans{background:#fff3b0;color:#3a2f00;border-radius:10px;padding:8px;margin:8px 0;line-height:1.6;font-size:14px}
 .msg{background:var(--card);border-radius:16px;padding:12px;font-size:15px;line-height:1.6;min-height:70px}
+.row{display:flex;gap:8px}
+button{font:inherit;font-weight:700;font-size:18px;border:0;border-radius:14px;padding:12px 8px;background:#fff;color:#2b2350;box-shadow:0 4px 0 #7a5cc7;cursor:pointer;touch-action:manipulation}
+button:active{transform:translateY(3px);box-shadow:0 1px 0 #7a5cc7}
+.card button{font-size:14px;padding:8px 12px;margin-right:6px}
+.ok{background:#6ff3d0}
+.pad{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
+.drop{grid-column:span 2;background:#ff7ad9;color:#fff;font-size:15px}
+.rs{background:#ffe36e;color:#2b2350}
+</style></head><body><div id="root"></div>
+<script>
+const {useState,useEffect}=React;
+const h=React.createElement;
+
 const QA = [
   ["តើប្រូតេអ៊ីនជាអ្វី?", "ប្រូតេអ៊ីនជាម៉ាក្រូគុលដែលបង្កឡើងពីអាស៊ីដអាមីនេជាច្រើនចងភ្ជាប់គ្នាពីមួយទៅមួយដោយសារចំណងបុិបទីដ។"],
   ["តើមានអាស៊ីដអាមីនេប៉ុន្មានទើបអាចក្លាយជាប្រូតេអ៊ីន?", "៥០ឡើងទៅ។"],
@@ -80,7 +93,7 @@ const init=()=>{const a=[];let id=0;for(let c=0;c<10;c++){const n=2+Math.floor(M
 let AC;const snd=(f,d,t,s=0)=>{try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();AC.resume();const o=AC.createOscillator(),g=AC.createGain(),T=AC.currentTime+s;o.type=t||"square";o.frequency.value=f;g.gain.setValueAtTime(.07,T);g.gain.exponentialRampToValueAtTime(.001,T+d);o.connect(g);g.connect(AC.destination);o.start(T);o.stop(T+d)}catch(e){}};
 const seq=(a,t,d=.12,g=.1)=>a.forEach((f,k)=>snd(f,d,t,k*g));
 const S={move:()=>snd(500,.06),down:()=>seq([600,450,300],"sawtooth"),up:()=>seq([300,450,600],"sawtooth"),grab:()=>seq([220,330],"square",.15,.1),win:()=>seq([523,659,784,1047],"triangle",.15,.12),bad:()=>seq([300,200,120],"sawtooth",.2,.15),ok:()=>seq([660,880],"triangle")};
-const topDoll=(ds,c)=>{for(let r=2;r>=0;r--){const d=ds.find(d=>d.c===c&&d.r===r&&!d.done);if(d)return d}return null};
+const topDoll=(ds,c)=>{for(let r=4;r>=0;r--){const d=ds.find(d=>d.c===c&&d.r===r&&!d.done);if(d)return d}return null};
 
 function App(){
  const [st,set]=useState({col:0,down:false,held:null,phase:"idle",q:0,deck:shuf(),dolls:init(),hook:12,show:false,msg:"ភ្នាក់ងារ! ចុច ◀ ▶ ដើម្បីរើសតុក្កតា រួចចុច ▼ ដើម្បីចាប់។"});
@@ -102,12 +115,12 @@ function App(){
  const next=()=>{S.ok();up({phase:"idle",msg:"🛸 សង្គ្រោះបានមួយ! រើសតុក្កតាបន្ទាប់។"})};
  useEffect(()=>{const k=e=>{const m={ArrowLeft:()=>mv(-1),ArrowRight:()=>mv(1),ArrowDown:down,ArrowUp:lift," ":drop}[e.key];if(m){e.preventDefault();m()}};window.addEventListener("keydown",k);return()=>window.removeEventListener("keydown",k)});
  const lights=h("div",{className:"lights"},Array.from({length:14},(_,i)=>h("i",{key:i})));
- const slot=over?h("div",{className:"msg"},"🎉 បេសកកម្មជោគជ័យ! សង្គ្រោះបានទាំងអស់! ចុច 🔄 ដើម្បីលេងម្តងទៀត។")
- :st.phase==="question"?h("div",{className:"card"},
+ const slot=st.phase==="question"?h("div",{className:"card"},
    h("div",{className:"q"},"❓ "+QA[st.q][0]),
    h("button",{onClick:()=>{S.move();up({show:!st.show})}},st.show?"លាក់ចម្លើយ":"បង្ហាញចម្លើយ"),
    st.show&&h("div",{className:"ans"},QA[st.q][1]),
    h("div",{className:"row",style:{marginTop:8}},h("button",{className:"ok",onClick:next},"បន្ត ▶")))
+ :over?h("div",{className:"msg"},"🎉 បេសកកម្មជោគជ័យ! សង្គ្រោះបានទាំងអស់! ចុច 🔄 ដើម្បីលេងម្តងទៀត។")
  :h("div",{className:"msg"},st.msg);
  return h("div",{className:"app"},
   h("div",{className:"body"},
