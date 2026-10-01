@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="km"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ព្រួញចាប · អង់ស្យូស្ពែម</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Khmer:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#1d3b2a;--card:#fffdf4;--line:#cfdcb8;--accent:#e0662b;--ok:#2f8f4e;box-sizing:border-box}
+:root:not([data-theme="light"]){}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--ink:#e6f3d8;--card:#1f3326;--line:#3d5a45}}
+:root[data-theme="dark"]{--ink:#e6f3d8;--card:#1f3326;--line:#3d5a45}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;overflow:hidden;background:#9bd3e8;font-family:'Noto Sans Khmer','Khmer OS',sans-serif;touch-action:none;-webkit-user-select:none;user-select:none}
+canvas{display:block;width:100%;height:100%}
+#hud{position:fixed;left:0;right:0;top:env(safe-area-inset-top,0px);display:flex;gap:8px;padding:8px 10px;align-items:center;pointer-events:none}
+.chip{background:rgba(255,253,244,.92);color:#1d3b2a;border-radius:20px;padding:5px 12px;font-weight:700;font-size:15px}
+#hud .sp{flex:1}
+.ib{pointer-events:auto;border:0;background:rgba(255,253,244,.92);color:#1d3b2a;border-radius:50%;width:40px;height:40px;font-size:18px}
+#fire{position:fixed;right:18px;bottom:calc(22px + env(safe-area-inset-bottom,0px));width:84px;height:84px;border-radius:50%;border:0;box-shadow:0 5px 0 #b84d1c;background:var(--accent);color:#fff;font-size:15px;font-weight:700}
+#fire:active{transform:scale(.94)}
+.ov{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(20,40,28,.55);padding:calc(14px + env(safe-area-inset-top,0px)) 14px calc(14px + env(safe-area-inset-bottom,0px))}
+.ov.on{display:flex}
+.card{background:var(--card);color:var(--ink);border:2px solid var(--line);border-radius:18px;width:100%;max-width:560px;max-height:100%;display:flex;flex-direction:column;overflow:hidden}
+.card h2{margin:0;padding:14px 16px 8px;font-size:17px;line-height:1.7}
+.card .num{font-size:13px;color:var(--accent);padding:12px 16px 0}
+.ans{margin:0 16px;padding:10px 12px;border-radius:12px;background:rgba(47,143,78,.14);border-left:5px solid var(--ok);overflow-y:auto;white-space:pre-line;line-height:1.85;font-size:16px;display:none;touch-action:pan-y}
+.ans.on{display:block}
+.btns{display:flex;gap:10px;padding:14px 16px}
+.btns button,.big{flex:1;border:0;border-radius:12px;padding:12px;font:700 16px 'Noto Sans Khmer',sans-serif;color:#fff}
+#tg{background:#2d6a8f}#go{background:var(--ok)}.big{background:var(--accent);flex:none;padding:12px 28px;margin:0 16px 16px}
+.title{padding:18px 16px 6px;text-align:center}.title h1{margin:0;font-size:24px}.title p{margin:6px 0 12px;line-height:1.8;font-size:14px}
+</style></head><body>
+<canvas id="cv"></canvas>
+<div id="hud"><div class="chip" id="sc">ពិន្ទុ 0</div><div class="chip" id="qn">0/0</div><div class="chip" id="dn">☀️ 20</div><div class="sp"></div>
+<button class="ib" id="mu" aria-label="sound">🔊</button><button class="ib" id="pa" aria-label="pause">⏸</button></div>
+<button id="fire">បាញ់</button>
+<div class="ov on" id="start"><div class="card"><div class="title"><h1>🏹 ព្រួញចាប៖ អង់ស្យូស្ពែម</h1>
+<p>បាញ់ចាបឱ្យត្រូវ ដើម្បីទទួលសំណួរ។ ចុច «បង្ហាញចម្លើយ» ដើម្បីមើល និង «បន្ត» ដើម្បីបាញ់បន្ត។<br>ប៉ះ/ទាញម្រាមដៃ ឬកណ្ដុរដើម្បីតម្រង់ · ចុចប៊ូតុង «បាញ់» · ក្តារចុច៖ ព្រួញ + Space</p></div>
+<button class="big" id="play">ចាប់ផ្តើម</button></div></div>
+<div class="ov" id="pause"><div class="card"><div class="title"><h1>ផ្អាក</h1></div><button class="big" id="resume">បន្តលេង</button></div></div>
+<div class="ov" id="qa"><div class="card"><div class="num" id="qnum"></div><h2 id="qt"></h2><div class="ans" id="at"></div>
+<div class="btns"><button id="tg">បង្ហាញចម្លើយ</button><button id="go">បន្ត</button></div></div></div>
+<script>
+const QA = [
+  {
+    "n": 1,
+    "q": "តើអង់ស្យូស្ពែម ជាអ្វី ? ចូរប្រាប់ឈ្មោះ រុក្ខជាតិអង់ស្យូស្ពែមឱ្យបានចំនួនបី ?",
+    "a": "អង់ស្យូស្ពែមជារុក្ខជាតិមានគ្រាប់ដែលគ្រាប់ត្រូវបានការពារដោយសំបក ។ រុក្ខជាតិអង់ស្យូស្តែមមានដូចជា៖ ស្វាយ ត្នោត មៀន ក្រូច ត្របែក....។"
+  },
+  {
+    "n": 2,
+    "q": "តើអង់ស្យូស្តែមមានប៉ុន្មានថ្នាក់សំខាន់ៗ ? អ្វីខ្លះ?",
+    "a": "អង់ស្យូស្តែមមាន ២ ថ្នាក់សំខាន់ៗ គឺ៖រុក្ខជាតិម៉ូណូកូទីលេដូន និង ឌីកូទីលេដូន ។"
+  },
+  {
+    "n": 3,
+    "q": "តើសរីរាង្គលូតលាស់របស់រុក្ខជាតិអង់ស្យូស្ពៃមមានអ្វីខ្លះ?",
+    "a": "សរីរាង្គលូតលាស់របស់រុក្ខជាតិអង់ស្យូស្ពៃមមាន៖ ឫស ដើម ស្លឹក។"
+  },
+  {
+    "n": 4,
+    "q": "តើឫសរបស់រុក្ខជាតិមាននាទីអ្វីខ្លះ?",
+    "a": "ឫសរបស់រុក្ខជាតិមាននាទី៖ ចង់ភ្ជាប់ដើមរុក្ខជាតិទៅនឹងដី និង ដឹកនាំសារធាតុខនិជពីដី ទៅ កាន់ដើមនិងស្លឹក ហើយឫសក៏មាននាទីស្តុកអាហារបម្រុងផងដែរ។"
+  },
+  {
+    "n": 5,
+    "q": "តើដើមរបស់រុក្ខជាតិមាននាទីអ្វីខ្លះ?",
+    "a": "ដើមរបស់រុក្ខជាតិមាននាទី៖\n> ទទ្រទ្រង់ផ្នែកនៅលើដ\n> ដដឹកនាំសារធាតុចិញ្ចឹមរវាងឫសនិងស្លឹ\n> សស្តុកអាហា\n> ដើមខ្លះមាននាទីធ្វើរស្មីសំយោគដើម្បីបង្កើតសារធាតុសរីរាង្គសម្រាប់រុក្ខជាតិផងដែរ។"
+  },
+  {
+    "n": 6,
+    "q": "តើជាលិកាសំខាន់ៗរបស់រុក្ខជាតិមានអ្វីខ្លះ? វាមាននាទីដូចម្តេច?",
+    "a": "ជាលិកាសំខាន់ៗរបស់រុក្ខជាតិមាន៖ ស៊ីឡែម និងផ្លូអែម។\n> ស៊ីឡែមមាននាទី ដឹកនាំ ទឹក និង អំបិលខនិជ ពីឫសទៅកាន់ ដើម និង ស្លឹក ។\n> ផ្លូអែមមាននាទី ដឹកនាំ អាហារ ដែលបានពីដំណើររស្មីសំយោគទៅផ្នែកផ្សេងៗនៃរុក្ខជាតិ ដើម្បី ចិញ្ចឹមផ្នែកទាំងនោះ ។"
+  },
+  {
+    "n": 7,
+    "q": "តើស្លឹក រុក្ខជាតិភាគច្រើនមាន ពណ៌អ្វី? ព្រោះអ្វី?",
+    "a": "ភាគច្រើនស្លឹករុក្ខជាតិមានពណ៌បៃតង ព្រោះស្លឹករុក្ខជាតិមាន ផ្ទុក-ក្លរ៉ូភីល-។"
+  },
+  {
+    "n": 8,
+    "q": "តើនៅក្នុងស្លឹករបស់រុក្ខជាតិអង់ស្សល្ហែមមានស្រទាប់ អ្វីខ្លះ? តើស្រទាប់ នីមួយៗមាននាទីដូចម្តេច?",
+    "a": "នៅក្នុងស្លឹករបស់រុក្ខជាតិអង់ស្សស្លែមមានស្រទាប់ អអេពីខែមលើនិងអេពីខែមក្រោ\nស្រទាប់ប៉ាលីសាត និង ស្រទាប់ស្អាត។\nស្រទាប់នីមួយៗមាននាទី៖\nស្រទាប់អេពីខែមលើនិងអេពីខែមក្រោមៈ មាននាទីការពារផ្ទៃស្លឹក និង មានសូម៉ាតសម្រាប់បណ្តូរ ឧស្ម័ននិងរំភាយចំហាយទឹក។\nរស្មីសំយោគដើម្បីផលិតរូបធាតុសរីរាង្គ ។ > ស្រទាប់ប៉ាលីសាតៈ មានកោសិកាដែលមាន ក្លរ៉ូប្លាសផ្ទុកក្លរ៉ូភីល វវាមាននាទីសំខាន់ក្នុងដំណើ\n> ស្រទាប់ស្លោតៈផ្ទុកជាលិកានាំពីរបែបគឺ៖សរសៃស៊ីឡែម និង ផ្លូអែម។"
+  },
+  {
+    "n": 9,
+    "q": "តើសរីរាង្គបន្តពូជរបស់រុក្ខជាតិអង់ស្យូស្ហែមជាអ្វី?",
+    "a": "សរីរាង្គបន្តពូជរបស់រុក្ខជាតិអង់ស្យូស្ហែមជា ផ្កា។"
+  },
+  {
+    "n": 10,
+    "q": "តើផ្នែកផ្សេងៗរបស់ផ្កាមានអ្វីខ្លះ?",
+    "a": "ផ្នែកផ្សេងៗរបស់ផ្កាមានដូចជា៖ត្របកផ្កា ស្រទាប់ផ្កា កញុំាកេសរញី និង កញុំកេសរ ឈ្មោល។"
+  },
+  {
+    "n": 11,
+    "q": "តើកេសរឈ្មោលមានប៉ុន្មានផ្នែក?អ្វីខ្លះ?",
+    "a": "កេសរឈ្មោលមាន ពីរ ផ្នែក៖ គឺ ៖ ទងកេសរឈ្មោល និងប្លោកលំអង។"
+  },
+  {
+    "n": 12,
+    "q": "តើកេសរញីមានប៉ុន្មានផ្នែក? អ្វីខ្លះ?",
+    "a": "កេសរញីមានបី ផ្នែក គឺ៖ ស្ទិចម៉ាត កកេសរញី និង អូវែ ។"
+  },
+  {
+    "n": 13,
+    "q": "តើភាពស្អិតរបស់ស្ទិចម៉ាតមានប្រយោជន៍អ្វីចំពោះផ្កា?",
+    "a": "ភាពស្អិតរបស់ស្ទិចម៉ាត សម្រាប់ទទួលគ្រាប់លំអងកុំឱ្យជ្រុះ។"
+  },
+  {
+    "n": 14,
+    "q": "ដូចម្តេចដែលហៅថាដំណើរលំអង?",
+    "a": "ដែលហៅថាដំណើរលំអងគឺជាផ្ទេរគ្រាប់លំអងពី ប្លោកលំអងទៅកាន់ស្ទិចម៉ាត។"
+  },
+  {
+    "n": 15,
+    "q": "តើដំណើរលំអងមានប៉ុន្មានបែប? អ្វីខ្លះ?",
+    "a": "ដំណើរលំអងមាន២បែបគឺ៖ ដំណើរលំអងឯងឬ ស្វ័យដំណើរលំអង និង ដំណើរលំអងកាត់"
+  },
+  {
+    "n": 16,
+    "q": "ដូចម្តេចដែលហៅថាដំណើរលំអងកាត់?",
+    "a": "ដំណើរលំអងកាត់ គឺជាការផ្ទេរគ្រាប់លំអងពីប្លោកលំអងនៃផ្ការុក្ខជាតិមួយ ទៅលើ ស្ទិចម៉ាតនៃផ្ការបស់រុក្ខជាតិផ្សេងមួយទៀត។"
+  },
+  {
+    "n": 17,
+    "q": "ដូចម្តេចដែលហៅថាដំណើរលំអងឯងឬ ស្វ័យដំណើរលំអង?",
+    "a": "ដំណើរលំអងឯងឬ ស្វ័យដំណើរលំអង គឺជាការផ្ទេរគ្រាប់លំអងពីប្លោកលំអងទៅលើស្ទិចម៉ាត នៃផ្ការុក្ខជាតិតែមួយ ឬ ផ្កាពីរផ្សេងគ្នា ក្នុងដើមតែមួយ។"
+  },
+  {
+    "n": 18,
+    "q": "តើដំណើរលំអងកាត់ប្រព្រឹត្តទៅដោយសារ អ្វី?",
+    "a": "ដំណើរលំអងកាត់ប្រព្រឹត្តទៅដោយសារ៖ ទឹក ខ្យល់ មនុស្ស សត្វល្អិតដូចជា ឃ្មុំ មេអំបៅ...។"
+  },
+  {
+    "n": 19,
+    "q": "តើសត្វល្អិតអាចនាំគ្រាប់លំអងដោយរបៀបណា?",
+    "a": "សត្វល្អិតអាចនាំគ្រាប់លំអងដោយការទាក់ ទាញរបស់ផ្កា។ពេលបានឃើញផ្កាមានពណ៌ស្រស់ ឆើតឆាយនិង ក្លិនក្រអូបសត្វល្អិតក៏ទៅទំលើផ្កានោះ រួច ត្រដុសនឹងប្លោកលំអង ហើយក៏ត្រូវគ្រាប់លំអងរោយពាស ពេញខ្លួន។ ពេលសត្វល្អិតទំលើផ្កាផ្សេងទៀតគ្រាប់លំអង ដែលជាប់នឹងសត្វល្អិតក៏ធ្លាក់លើស្ទិចម៉ាតរបស់ផ្កានោះ។"
+  },
+  {
+    "n": 20,
+    "q": "ចូរពណ៌នាពីកំណគ្រាប់លំអង (កំណមីក្រូស្សី)",
+    "a": "ពណ៌នាពីកំណគ្រាប់លអង (កំណមីក្រូស្សី)៖ ក្នុងប្លោកលំអងនៃកេសរឈ្មោលមានស្ប៉ូអាប្លូអ៊ុតដែល កើតឡើងតាមចំណែកមេយ៉ូស។ ស្ប៉ូនីមួយៗចែកខ្លួន១ដងតាមចំណែកមីតូស ហើយលូតលាស់ទៅជា គ្រាប់លំអង។ គ្រាប់លំអងខ្ចីនេះជាកាម៉ែតូភីតឈ្មោល គ្រាប់លំអងនីមួយៗមានណៃយ៉ូអាប្លូអ៊ុតពីរ៖ គឺ ណៃយ៉ូលូតលាស់ និង ណ្វៃយ៉ូបន្តពូជ។"
+  },
+  {
+    "n": 21,
+    "q": "ចូរពណ៌នាពីកំណថង់អំប្រ៊ីយ៉ុង និងកាម៉ែត ញី?",
+    "a": "ពណ៌នាពីកំណចង់អំប្រ៊ីយ៉ុងនិងកាម៉ែតញី៖ អូវែផ្នែកអូវុល កោសិកាមេ១នៃអូវុល(ក្រម៉ូសូម រងចំណែកមេយ៉ូសបង្កើតបានកោសិកាស្អំអាប្លូអ៊ុត៤។ក្នុងចំណោមភ្នំទាំង៤ ៣ ត្រូវបានងាប់ ឯស្សី១នៅសល់ធ្វើចំណែកមីតូស៣ដងបន្តបន្ទាប់បង្កើតបានថង់កំណ (កាម៉ែភូភីតញី)។ ចង់កំណនេះមាន មានកោសិកា៧ តែមានព្រៃយ៉ូអាប្តូអ៊ុត(១)ដល់ទៅ៨។ កោសិការាងធំមួយនៅចំកណ្តាលមានព្រៃយ៉ូ ២ ហៅថា ព្រៃឃុំប៉ូលែ។ កោសិកាភេទញីហៅថា អូអូស៊ែ នៅចន្លោះកោសិកាស៊ីណែស៊ីត ២ ជាប់នឹង មីក្រូពីល និង កោសិការអង់ទីប៊ូត ៣ ទៀតស្ថិតនៅម្ខាងទៀតនៃចង់កំណ។"
+  },
+  {
+    "n": 23,
+    "q": "តើដំណុះគ្រាប់លំអងមានលក្ខណៈដូចម្តេច?",
+    "a": "ដំណុះគ្រាប់លំអងមានលក្ខណៈ៖ នៅពេលធ្លាក់លើស្ទិចម៉ាតគ្រាប់លំអងក៏ដុះពន្លកឡើង ហើយពន្លូតខ្លួនចាក់ចូលទៅក្នុងជាលិកានៃកេសរញី រហូតដល់ អូវុល។ ណៃ្វយ៉ូទាំងពីរ ធ្វើដំណើរក្នុងបំពង់លំអង។ណ្វៃយ៉ូទី១ រលាយបាត់ទៅវិញ ឯណ្វៃយ៉ូទី២ ចែកខ្លួនតាមមីតូស បង្កើត បានស្តែម៉ាតូសូអ៊ីតពីរ។"
+  },
+  {
+    "n": 24,
+    "q": "តើការបង្កកំណើតរបស់រុក្ខជាតិមានផ្កា(រុក្ខជាតិអង់ស្យូស្ពៃម) ប្រព្រឹត្តទៅដូចម្តេច?",
+    "a": "ការបង្កកំណើតរបស់រុក្ខជាតិមានផ្កា (រុក្ខជាតិអង់ស្យូស្ពៃម) ប្រព្រឹត្តទៅដោយ៖ស្ពែម៉ាតូសូអ៊ីតមួយក្នុងចំណោមស្ពែម៉ាតូសូអ៊ីតទាំងពីរបង្ក កំណើតជាមួយកាម៉ែតញី ហើយបង្កើតបានស៊ីកូតឌីប្លូអ៊ីត (2n) មួយដែលនឹងលូតលាស់ជាអំប្រ៊ីយ៉ុង។\nស្ពែម៉ាតូសូអ៊ីតមួយទៀតរលាយជាមួយណ្វៃយ៉ូប៉ូលែបង្កើត បានជាអាល់ប៊ុយមែនទ្រីប្តូអ៊ីត (3n) ។"
+  },
+  {
+    "n": 25,
+    "q": "ដូចម្តេចដែលហៅថាការបង្កកំណើតទ្វេ?",
+    "a": "ការបង្កកំណើតទ្វេ គឺជាការបង្កកំណើតពីរដងក្នុងពេលតែមួយ។"
+  },
+  {
+    "n": 26,
+    "q": "តើគ្រាប់របស់រុក្ខជាតិមានប៉ុន្មានផ្នែក?អ្វីខ្លះ?",
+    "a": "គ្រាប់របស់រុក្ខជាតិមានបីផ្នែកគឺ៖ សំបកគ្រាប់ អំប្រ៊ីយ៉ុង និង អង់ដូស្តែម (សាច់គ្រាប់)។"
+  },
+  {
+    "n": 27,
+    "q": "តើវដ្តជីវិតរបស់រុក្ខជាតិមានផ្កា (រុក្ខជាតិអង់ស្យូស្ពៃម) ប្រព្រឹត្តទៅដូចម្តេច?",
+    "a": "វដ្តជីវិតរបស់រុក្ខជាតិមានផ្កា(រុក្ខជាតិអង់ស្យូស្ពៃម)ប្រព្រឹត្តទៅ៖ វដ្តជីវិតរបស់រុក្ខជាតិមានផ្កាមាន ពីរដំណាក់គឺ៖ ដំណាក់ផ្កា និង ដំណាក់គ្រាប់។ ក្នុងផ្ការុក្ខជាតិមានប្លោកលំអងដែលផលិតគ្រាប់លំអង។ ក្រោយមកចែកខ្លួនតាមមីតូស ណៃយ៉ូទី២ របស់គ្រាប់ លំអង បង្កើតជាស្ពែម៉ាតូសូអ៊ីត ពីរ។\nអូវែផ្ទុកអូវុល។ ក្រោយមេយ៉ូសកោសិកាមេក្នុងអូវុល បង្កើតបានស្ប៉ូអាប្លូអ៊ុត៤ ។ ក្រោយមក ស្ប៉ូទាំង៣ ងាប់ មានស្បតែមួយគត់ ធ្វើចំណែកមីតូស ៣ដងបន្តបន្ទាប់ បង្កើតបានថង់កំណ ដែលមានកោសិកា៧ តែមានណៃយ៉ូ ៨។ ក្នុងថង់កំណនេះមានអូអូស្មើ១ដែលបង្កកំណើត ជាមួយស្តែម៉ាតូសូអ៊ុត បង្កើតបានស៊ីកូតមួយដែលនឹងលូត លាស់ជា អំប្រ៊ីយ៉ុង។\nអំប្រ៊ីយ៉ុងស្ថិតនៅក្នុងគ្រាប់ដែលមានសំបកការពារ ។ គ្រាប់ដុះបង្កើតបានជារុក្ខជាតិថ្មី។\nចំពោះស្តែម៉ាតូសូអ៊ុតមួយទៀតដែលមិនបានបង្កកំណើត ជួបជាមួយព្រៃយ៉ូប៉ូលែបង្កើតបានជា អាល់ប៊ុយមែនទ្រីប្តូអ៊ីត។"
+  }
+];
+const $=id=>document.getElementById(id);
+const cv=$('cv'),cx=cv.getContext('2d');let W,H,DPR;
+function rs(){DPR=Math.min(devicePixelRatio||1,2);W=innerWidth;H=innerHeight;cv.width=W*DPR;cv.height=H*DPR;cx.setTransform(DPR,0,0,DPR,0,0)}
+addEventListener('resize',rs);rs();
+// ---- sound ----
+let AC,muted=false;
+function ac(){if(!AC){try{AC=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(AC&&AC.state==='suspended')AC.resume();return AC}
+function tone(f,d,type='sine',vol=.18,slide=0,when=0){const a=ac();if(!a||muted)return;const t=a.currentTime+when,o=a.createOscillator(),g=a.createGain();
+o.type=type;o.frequency.setValueAtTime(f,t);if(slide)o.frequency.exponentialRampToValueAtTime(Math.max(30,f+slide),t+d);
+g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g).connect(a.destination);o.start(t);o.stop(t+d+.02)}
+function noise(d,vol=.12,when=0){const a=ac();if(!a||muted)return;const n=a.sampleRate*d,b=a.createBuffer(1,n,a.sampleRate),c=b.getChannelData(0);
+for(let i=0;i<n;i++)c[i]=(Math.random()*2-1)*(1-i/n);const s=a.createBufferSource(),g=a.createGain();s.buffer=b;g.gain.value=vol;s.connect(g).connect(a.destination);s.start(a.currentTime+when)}
+const SFX={
+ shoot(){noise(.18,.12);tone(520,.16,'triangle',.12,-380)},
+ hit(){tone(180,.18,'square',.16,-120);tone(900,.1,'sine',.14,500,.05);tone(1300,.12,'sine',.12,-300,.12)},
+ popup(){[660,830,990].forEach((f,i)=>tone(f,.14,'sine',.15,0,.05+i*.09))},
+ show(){tone(520,.12,'triangle',.16);tone(780,.2,'triangle',.16,0,.1)},
+ hide(){tone(780,.12,'triangle',.14);tone(480,.2,'triangle',.14,0,.1)},
+ go(){tone(400,.08,'square',.1);tone(600,.12,'square',.1,0,.07)},
+ tweet(){tone(1800,.07,'sine',.04,600);tone(2200,.06,'sine',.04,-400,.09)}
+};
+// ---- game ----
+let state='idle',score=0,asked=0,ang=-Math.PI/2,birds=[],arrows=[],parts=[],last=0,cool=0,spawnT=0,deck=[],cur=null;
+const B=['🐦','🕊️','🦜','🐤','🦋'],BN=['🦉','🦇','🕊️','🦉'];
+const bow=()=>({x:W/2,y:H-48});
+function spawn(){const dir=Math.random()<.5?1:-1,sz=40+Math.random()*16;
+ birds.push({x:dir>0?-40:W+40,y:H*.14+Math.random()*H*.38,v:dir*(70+Math.random()*130+score*4),e:(dayAmt()>.5?B:BN)[Math.random()*4|0],s:sz,ph:Math.random()*6,gold:Math.random()<.12})}
+function fire(){if(state!=='play'||cool>0)return;const b=bow();arrows.push({x:b.x,y:b.y,a:ang});cool=.45;SFX.shoot()}
+function nextQ(){if(!deck.length)deck=QA.map((_,i)=>i).sort(()=>Math.random()-.5);return QA[deck.pop()]}
+function openQ(){cur=nextQ();asked++;$('qnum').textContent='សំណួរទី '+cur.n;$('qt').textContent=cur.q;$('at').textContent=cur.a;$('at').classList.remove('on');$('tg').textContent='បង្ហាញចម្លើយ';$('at').scrollTop=0;$('qa').classList.add('on');state='qa';SFX.popup();hud()}
+function toggle(){const on=$('at').classList.toggle('on');$('tg').textContent=on?'លាក់ចម្លើយ':'បង្ហាញចម្លើយ';on?SFX.show():SFX.hide()}
+function cont(){SFX.go();$('qa').classList.remove('on');state='play';last=performance.now()}
+function hud(){$('sc').textContent='ពិន្ទុ '+score;$('qn').textContent=asked+'/'+QA.length}
+function setPause(p){if(state==='play'&&p){state='pause';$('pause').classList.add('on')}else if(state==='pause'&&!p){state='play';$('pause').classList.remove('on');last=performance.now()}}
+function boom(x,y,c){for(let i=0;i<16;i++){const a=Math.random()*6.28,s=60+Math.random()*180;parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,l:.6,c})}}
+function update(dt){
+ cyc+=dt;cool=Math.max(0,cool-dt);spawnT-=dt;if(spawnT<=0&&birds.length<5){spawn();spawnT=1+Math.random()*1.4}
+ if(Math.random()<dt*.5)SFX.tweet();
+ birds.forEach(b=>{b.x+=b.v*dt;b.ph+=dt*6});birds=birds.filter(b=>b.x>-80&&b.x<W+80);
+ for(const r of arrows){r.x+=Math.cos(r.a)*950*dt;r.y+=Math.sin(r.a)*950*dt}
+ arrows=arrows.filter(r=>r.x>-30&&r.x<W+30&&r.y>-30&&r.y<H+30);
+ for(const r of arrows){const tx=r.x+Math.cos(r.a)*20,ty=r.y+Math.sin(r.a)*20;
+  for(const b of birds){if(Math.hypot(b.x-tx,b.y-ty)<b.s*.6){r.dead=1;b.dead=1;score+=b.gold?2:1;boom(b.x,b.y,b.gold?'#f4c430':'#e0662b');SFX.hit();hud();setTimeout(openQ,450);state='hit';break}}}
+ arrows=arrows.filter(r=>!r.dead);birds=birds.filter(b=>!b.dead);
+ parts.forEach(p=>{p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=300*dt;p.l-=dt});parts=parts.filter(p=>p.l>0)}
+let cyc=3,fdt=0,dnT='';
+const hx=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
+const mx=(a,b,t)=>{const A=hx(a),B2=hx(b);return 'rgb('+A.map((v,i)=>Math.round(v+(B2[i]-v)*t)).join()+')'};
+const cl=x=>Math.max(0,Math.min(1,x));
+function dayAmt(){const v=cyc%40;const i=v<=20?Math.min(v,20-v):(v<30?20-v:v-40);return cl(.5+i/2)}
+const stars=Array.from({length:45},()=>({x:Math.random(),y:Math.random()*.55,p:Math.random()*6}));
+const clouds=Array.from({length:6},(_,i)=>({x:Math.random()*900,y:50+Math.random()*180,s:.7+Math.random()*.8,v:10+Math.random()*18}));
+const flies=Array.from({length:14},()=>({x:Math.random(),y:.6+Math.random()*.3,p:Math.random()*6}));
+function puff(x,y,s,col){cx.fillStyle=col;cx.beginPath();[[0,0,26],[28,-10,32],[60,0,26],[30,8,28]].forEach(c=>{cx.moveTo(x+c[0]*s+c[2]*s,y+c[1]*s);cx.arc(x+c[0]*s,y+c[1]*s,c[2]*s,0,6.3)});cx.fill()}
+function face(x,y,r,eye){cx.fillStyle=eye;cx.beginPath();cx.arc(x-r*.32,y-r*.1,r*.09,0,6.3);cx.arc(x+r*.32,y-r*.1,r*.09,0,6.3);cx.fill();
+ cx.strokeStyle=eye;cx.lineWidth=r*.08;cx.lineCap='round';cx.beginPath();cx.arc(x,y+r*.05,r*.36,.25,Math.PI-.25);cx.stroke();
+ cx.fillStyle='rgba(255,120,120,.45)';cx.beginPath();cx.arc(x-r*.55,y+r*.2,r*.12,0,6.3);cx.arc(x+r*.55,y+r*.2,r*.12,0,6.3);cx.fill()}
+function sky(){
+ const d=dayAmt(),v=cyc%40,g=cx.createLinearGradient(0,0,0,H);
+ g.addColorStop(0,mx('#141a45','#46b6ff',d));g.addColorStop(.65,mx('#3a3f86','#bdeaff',d));g.addColorStop(1,mx('#5b5fa8','#fff4c2',d));cx.fillStyle=g;cx.fillRect(0,0,W,H);
+ const sec=Math.ceil(v<20?20-v:40-v),txt=(v<20?'☀️ ':'🌙 ')+sec;if(txt!==dnT){dnT=txt;$('dn').textContent=txt}
+ const t=performance.now()/1000;
+ if(d<1){stars.forEach(s=>{cx.globalAlpha=(1-d)*(.5+.5*Math.sin(t*2+s.p));cx.fillStyle='#fff';cx.beginPath();cx.arc(s.x*W,s.y*H,1.6,0,6.3);cx.fill()});cx.globalAlpha=1}
+ const R=Math.min(46,W*.1);
+ if(d>0){const p=v<20?v/20:(v>=30?0:1),x=W*(.1+.8*p),y=H*.42-Math.sin(Math.PI*p)*H*.3;cx.globalAlpha=d;
+  const gl=cx.createRadialGradient(x,y,R*.5,x,y,R*3);gl.addColorStop(0,'rgba(255,230,120,.7)');gl.addColorStop(1,'rgba(255,230,120,0)');cx.fillStyle=gl;cx.fillRect(x-R*3,y-R*3,R*6,R*6);
+  cx.save();cx.translate(x,y);cx.rotate(t*.3);cx.strokeStyle='#ffc933';cx.lineWidth=5;cx.lineCap='round';for(let i=0;i<12;i++){cx.rotate(Math.PI/6);cx.beginPath();cx.moveTo(R*1.25,0);cx.lineTo(R*1.6,0);cx.stroke()}cx.restore();
+  cx.fillStyle='#ffd93d';cx.beginPath();cx.arc(x,y,R,0,6.3);cx.fill();face(x,y,R,'#a85a00');cx.globalAlpha=1}
+ if(d<1){const q=v>=20?(v-20)/20:1,x=W*(.1+.8*q),y=H*.42-Math.sin(Math.PI*q)*H*.3;cx.globalAlpha=1-d;
+  const gl=cx.createRadialGradient(x,y,R*.5,x,y,R*2.6);gl.addColorStop(0,'rgba(200,215,255,.5)');gl.addColorStop(1,'rgba(200,215,255,0)');cx.fillStyle=gl;cx.fillRect(x-R*3,y-R*3,R*6,R*6);
+  cx.fillStyle='#fbf6dc';cx.beginPath();cx.arc(x,y,R,0,6.3);cx.fill();cx.fillStyle='rgba(190,180,150,.35)';cx.beginPath();cx.arc(x+R*.45,y-R*.45,R*.18,0,6.3);cx.arc(x-R*.5,y+R*.5,R*.14,0,6.3);cx.fill();face(x,y,R,'#7a6a4a');cx.globalAlpha=1}
+ const cc=mx('#aab0e0','#ffffff',d);
+ clouds.forEach(c=>{c.x+=c.v*fdt;if(c.x>W+120)c.x=-160;puff(c.x,c.y+Math.sin(t*.6+c.s*5)*3,c.s,cc)});
+ cx.fillStyle=mx('#2a6e5a','#8fe06a',d);cx.beginPath();cx.moveTo(0,H);cx.lineTo(0,H-90);cx.quadraticCurveTo(W*.25,H-150,W*.5,H-100);cx.quadraticCurveTo(W*.8,H-55,W,H-110);cx.lineTo(W,H);cx.fill();
+ cx.fillStyle=mx('#17483a','#4cc26a',d);cx.beginPath();cx.moveTo(0,H);cx.lineTo(0,H-34);cx.quadraticCurveTo(W*.3,H-70,W*.55,H-36);cx.quadraticCurveTo(W*.8,H-12,W,H-44);cx.lineTo(W,H);cx.fill();
+ if(d>0){cx.globalAlpha=d;['#ff7eb6','#fff','#ffd93d','#ff9f43'].forEach((c,k)=>{cx.fillStyle=c;for(let i=0;i<7;i++){const x=((i*131+k*47)%100)/100*W,y=H-12-((i*37+k*19)%24);cx.beginPath();cx.arc(x,y,3.5,0,6.3);cx.fill()}});cx.globalAlpha=1}
+ if(d<1)flies.forEach(f=>{const x=f.x*W+Math.sin(t+f.p)*20,y=f.y*H+Math.cos(t*.8+f.p)*14;cx.globalAlpha=(1-d)*(.4+.6*Math.sin(t*3+f.p)**2);cx.fillStyle='#fff48a';cx.shadowColor='#fff48a';cx.shadowBlur=10;cx.beginPath();cx.arc(x,y,2.6,0,6.3);cx.fill();cx.shadowBlur=0});cx.globalAlpha=1}
+function draw(){
+ sky();
+ cx.textAlign='center';cx.textBaseline='middle';
+ birds.forEach(b=>{cx.save();cx.translate(b.x,b.y+Math.sin(b.ph)*6);if(b.v>0)cx.scale(-1,1);if(b.gold){cx.shadowColor='#f4c430';cx.shadowBlur=18}cx.font=b.s+'px serif';cx.fillText(b.e,0,0);cx.restore()});
+ const bw=bow();
+ arrows.forEach(r=>{cx.save();cx.translate(r.x,r.y);cx.rotate(r.a);cx.strokeStyle='#6b4423';cx.lineWidth=3;cx.beginPath();cx.moveTo(-16,0);cx.lineTo(22,0);cx.stroke();
+  cx.fillStyle='#444';cx.beginPath();cx.moveTo(30,0);cx.lineTo(20,-5);cx.lineTo(20,5);cx.fill();cx.restore()});
+ cx.save();cx.translate(bw.x,bw.y);cx.rotate(ang);cx.strokeStyle='#7a4a21';cx.lineWidth=6;cx.lineCap='round';cx.beginPath();cx.arc(-8,0,34,-1.2,1.2);cx.stroke();
+ cx.strokeStyle='#f6f1e0';cx.lineWidth=1.5;cx.beginPath();cx.moveTo(-8+34*Math.cos(-1.2),34*Math.sin(-1.2));cx.lineTo(-18,0);cx.lineTo(-8+34*Math.cos(1.2),34*Math.sin(1.2));cx.stroke();
+ if(cool<=0&&state==='play'){cx.strokeStyle='rgba(224,102,43,.6)';cx.setLineDash([4,8]);cx.beginPath();cx.moveTo(40,0);cx.lineTo(220,0);cx.stroke()}cx.restore();
+ parts.forEach(p=>{cx.globalAlpha=Math.max(0,p.l/.6);cx.fillStyle=p.c;cx.fillRect(p.x,p.y,5,5)});cx.globalAlpha=1}
+function pad(dt){const gp=(navigator.getGamepads?navigator.getGamepads():[]);for(const p of gp){if(!p)continue;
+ const bt=i=>p.buttons[i]&&p.buttons[i].pressed;const k=pad.k=pad.k||{};const edge=(n,v)=>{const r=v&&!k[n];k[n]=v;return r};
+ const ax=Math.abs(p.axes[0])>.2?p.axes[0]:(bt(15)?1:bt(14)?-1:0);
+ if(state==='play'){ang=Math.max(-3.0,Math.min(-.14,ang+ax*2.2*dt));if(edge('a',bt(0)||bt(7)))fire()}
+ if(state==='qa'){if(edge('a',bt(0)))toggle();if(edge('b',bt(1)||bt(9)))cont()}
+ if(edge('p',bt(9)||(state!=='qa'&&bt(1)))){setPause(state==='play')}
+ if(edge('r',bt(0))&&state==='pause')setPause(false);break}}
+function loop(t){const dt=Math.min(.05,(t-last)/1000||0);last=t;fdt=dt;pad(dt);
+ if(state==='play'){const kd=keys;ang=Math.max(-3.0,Math.min(-.14,ang+((kd.ArrowRight||kd.d)?1:0)*2*dt-((kd.ArrowLeft||kd.a)?1:0)*2*dt))}
+ if(state==='play'||state==='hit')update(dt);draw();requestAnimationFrame(loop)}
+// ---- input ----
+const keys={};
+addEventListener('keydown',e=>{keys[e.key]=1;if(e.key===' '){e.preventDefault();if(state==='play')fire();else if(state==='qa')toggle()}
+ if(e.key==='Enter'&&state==='qa')cont();if(e.key==='Escape'||e.key==='p')setPause(state==='play')});
+addEventListener('keyup',e=>keys[e.key]=0);
+function aimAt(x,y){const b=bow();ang=Math.max(-3.0,Math.min(-.14,Math.atan2(y-b.y,x-b.x)))}
+cv.addEventListener('pointermove',e=>{if(state==='play'&&(e.pointerType!=='touch'||e.buttons))aimAt(e.clientX,e.clientY)});
+cv.addEventListener('pointerdown',e=>{if(state==='play'){aimAt(e.clientX,e.clientY);if(e.pointerType==='mouse')fire()}});
+$('fire').addEventListener('pointerdown',e=>{e.preventDefault();fire()});
+$('tg').onclick=toggle;$('go').onclick=cont;$('pa').onclick=()=>setPause(state==='play');$('resume').onclick=()=>{SFX.go();setPause(false)};
+$('mu').onclick=()=>{muted=!muted;$('mu').textContent=muted?'🔇':'🔊'};
+$('play').onclick=()=>{ac();SFX.go();$('start').classList.remove('on');state='play';last=performance.now();spawnT=0;hud()};
+hud();requestAnimationFrame(loop);
+</script></body></html>
