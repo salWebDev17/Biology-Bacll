@@ -1,0 +1,180 @@
+<!DOCTYPE html><html lang="km"><head><meta charset="utf-8"><title>Enzyme Fishing Game</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Khmer:wght@400;700&family=Fredoka:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{--panel:#fffaf0;--ink:#16324a;--line:#ffb347;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--panel:#1d2b3a;--ink:#f1f5f9}}
+:root[data-theme="dark"]{--panel:#1d2b3a;--ink:#f1f5f9}
+html,body{height:100%;margin:0;overflow:hidden;background:#123;font-family:'Noto Sans Khmer','Fredoka',system-ui,sans-serif}
+canvas{display:block;width:100%;height:100%;touch-action:manipulation}
+#bar{position:fixed;top:0;left:0;right:0;padding:calc(env(safe-area-inset-top,0px) + 8px) 10px 8px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;pointer-events:none}
+#bar>*{pointer-events:auto}
+#score{background:#16324a;color:#fff;border-radius:99px;padding:6px 14px;font:700 15px Fredoka,sans-serif;margin-right:auto}
+.chip,.chip2,.btn{font:inherit;font-size:13px;border:0;border-radius:99px;padding:7px 12px;background:rgba(255,255,255,.88);color:#16324a;cursor:pointer}
+.chip.on{background:#ff7a3d;color:#fff}
+#hint{position:fixed;left:0;right:0;bottom:calc(env(safe-area-inset-bottom,0px) + 10px);text-align:center;color:#fff;font-size:14px;text-shadow:0 1px 4px #000;pointer-events:none}
+#m{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(5,20,40,.55);padding:16px}
+#m.on{display:flex}
+.card{background:var(--panel);color:var(--ink);border-radius:18px;max-width:560px;width:100%;max-height:85%;overflow:auto;padding:18px 18px 16px;box-shadow:0 12px 40px rgba(0,0,0,.4)}
+#qn{font:700 14px Fredoka,sans-serif;opacity:.7}
+#qt{font-size:19px;line-height:1.7;font-weight:700;margin:6px 0 12px}
+#ans{white-space:pre-wrap;line-height:1.8;font-size:16px;border-left:5px solid var(--line);padding:8px 12px;margin-bottom:12px;background:rgba(255,179,71,.14);border-radius:0 10px 10px 0}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.btn{background:#16324a;color:#fff;font-size:15px;padding:10px 16px}
+.btn.alt{background:#ff7a3d}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="bar"><div id="score"></div>
+<button class="chip" data-w="auto">Auto</button><button class="chip" data-w="0">☀️ Calm · ស្ងប់</button><button class="chip" data-w="1">🌧️ Rain · ភ្លៀង</button><button class="chip" data-w="2">🌊 Big wave · រលកធំ</button><button class="chip2" id="tm">🌅 Time</button><button class="chip2" id="mu">🔊</button></div>
+<div id="hint">Tap a fish to cast your rod · ចុចលើត្រីដើម្បីស្ទូច<br>🔊 Tap once to turn the sound on</div>
+<div id="m"><div class="card"><div id="qn"></div><div id="qt"></div><div id="ans" hidden></div>
+<div class="row"><button class="btn alt" id="tg"></button><button class="btn" id="nx"></button></div></div></div>
+<script>
+const QA=[{"q": "តើអង់ស៊ីមជាអ្វី?", "a": "អង់ស៊ីមជា កាតាលីករ ដែលជួយជម្រុញល្បឿនប្រតិកម្មគីមីជីវៈផ្សេងៗ ។"}, {"q": "ក្នុងបន្ទប់ពិសោធន៍ តើថាមពលដែលជំរុញប្រតិកម្មគីមីជាអ្វី?", "a": "ក្នុងបន្ទប់ពិសោធន៍ ថាមពលដែលជំរុញប្រតិកម្មគីមី គឺ កម្ដៅ ។"}, {"q": "ហេតុអ្វីបានជានៅពេលក្តៅខ្លាំង ប្រតិកម្មគីមីប្រព្រឹត្តទៅលឿន?", "a": "បានជានៅពេលក្តៅខ្លាំង ប្រតិកម្មគីមីប្រព្រឹត្តទៅលឿន ព្រោះចលនានៃការប៉ះទង្គិចរបស់ ម៉ូលេគុលកាន់តែកើនឡើង ។"}, {"q": "តើគេប្រើវិធីអ្វីផ្សេងទៀត ដើម្បីបង្កើនល្បឿនប្រតិកម្មគីមី?", "a": "ដើម្បីបង្កើនល្បឿនប្រតិកម្មគីមី ក្រៅពីសីតុណ្ហភាព គឺគេប្រើកំហាប់អង្គធាតុប្រតិករ ឬ កាតាលីករ អសរីរាង្គ ។"}, {"q": "តើម៉ង់កាណែសអុកស៊ីតជាអ្វី?", "a": "ម៉ង់កាណែសអុកស៊ីតជា កាតាលីករ អសរីរាង្គ ។"}, {"q": "តើគេដាក់ឈ្មោះអង់ស៊ីមដោយផ្អែកលើអ្វី?", "a": "គេដាក់ឈ្មោះអង់ស៊ីមដោយផ្អែកលើ នាទីរបស់វា ។"}, {"q": "តើឈ្មោះអង់ស៊ីមបញ្ចប់ដោយពាក្យអ្វី?", "a": "ឈ្មោះអង់ស៊ីមបញ្ចប់ដោយពាក្យ \" អាស ” នៅលើ ស៊ុបស្អាត ។"}, {"q": "ដូចម្តេចដែលហៅថាស៊ុបស្អាត (Substrate)?", "a": "ដែលហៅថាស៊ុបស្អាត (Substrate) គឺជា ម៉ូលេគុលដែលអង់ស៊ីមមានអំពើទៅលើ ។"}, {"q": "តើគេហៅឈ្មោះអង់ស៊ីមយ៉ាងដូចម្តេច?", "a": "គេហៅឈ្មោះអង់ស៊ីម ដោយផ្តើមពីស៊ុបស្អាត ហើយបញ្ចប់ដោយពាក្យ “អាស “(as) ។"}, {"q": "ចូរឧទាហរណ៍ឈ្មោះអង់ស៊ីម និង ស៊ុបស្អាត ឱ្យបានប្រាំ?", "a": "ឈ្មោះអង់ស៊ីម និង ស៊ុបស្អាត\nស៊ុបស្អាត អង់ស៊ីម\nអាមីដុង  ➜  អាមីឡាស\nលីពីត  ➜  លីប៉ាស\nប្រតេអ៊ីន  ➜  ប្រតេអាស\nផូស្វាត  ➜  ផូស្វាតាស\nសែលុយឡូស  ➜  សែលុយឡាស"}, {"q": "ហេតុអ្វីបានជាគេនិយាយថាអង់ស៊ីមជាប្រូតេអ៊ីន យថាប្រភេទ?", "a": "បានជាគេនិយាយថាអង់ស៊ីមជាប្រតេអ៊ីន យថាប្រភេទ ព្រោះអង់ស៊ីមនីមួយៗ មានអំពើទៅ តែ ស៊ុបស្អាតតែមួយ ប៉ុណ្ណោះ ។"}, {"q": "តើគេហៅឈ្មោះអង់ស៊ីមបានត្រឹមត្រូវដោយផ្អែកលើកត្តាអ្វីខ្លះ?", "a": "គេហៅឈ្មោះអង់ស៊ីមបានត្រឹមត្រូវដោយផ្អែកលើកត្តា ពីរយ៉ាង គឺ លើយថាប្រភេទនៃកាតា លីករដែលជម្រុញល្បឿនប្រតិកម្ម និង ម៉្យាងទៀតទៅលើឈ្មោះស៊ុបស្អាតដែលបញ្ចប់ដោយពាក្យ អាស ។"}, {"q": "តើគេចែកថ្នាក់អង់ស៊ីមជាប៉ុន្មានក្រុម? អ្វីខ្លះ?", "a": "គេចែកថ្នាក់អង់ស៊ីមជា៦ ក្រុម គឺ\nអុកស៊ីដូរេដុកតាស (Oxidoreductase)\nត្រង់ស្ទើរ៉ាស់ (Transferase)\nអ៊ីដ្រូឡាស(Hydrolas)\nលីយ៉ាស (Lyase)\nអីសូមេរ៉ាស (Isomerase)\nលីហ្គាស (Ligases)"}, {"q": "ដូចម្តេចដែលហៅថា អុកស៊ីដូរេដុកតាស (Oxidoreductase)?", "a": "ដែលហៅថា អុកស៊ីដូរេដុកតាស (Oxidoreductase) គឺជាអង់ស៊ីមដែលចូលរួមក្នុងប្រតិកម្ម រេដុក ឬ អុកស៊ីដូរេដុកតាស ។"}, {"q": "តើថ្នាក់រងរបស់ ក្រុមអុកស៊ីដូរេដុកតាស មានអ្វីខ្លះ ?", "a": "ថ្នាក់រងរបស់ ក្រុមអុកស៊ីដូរេដុកតាស មាន៖\nអុកស៊ីជាស\nដេស៊ីដ្រូសែនណាស\nអុកស៊ីសែនណាស\nពែអុកស៊ីដាស\nរេដុកតាស\nអីជ្រូកស៊ីឡាស ។"}, {"q": "ដូចម្តេចដែលហៅថា ត្រង់ស្ទើរ៉ាស (Transferase)?", "a": "ដែលហៅថា ត្រង់ស្ទើរ៉ាស់(Transferase) គឺ ជាអង់ស៊ីមដែលចូលរួមក្នុងប្រតិកម្មគីមីយថា ប្រភេទ ដោយផ្ទេរម៉ូលេគុលពីបណ្តុំមួយទៅមួយទៀត ។"}, {"q": "តើបុព្វបទរបស់ក្រុម ត្រង់ស្ទើរ៉ាសឈ្មោះអ្វី? ហើយមានន័យដូចម្តេច?", "a": "បុព្វបទរបស់ក្រុម ត្រង់ស្ទើរ៉ាស ឈ្មោះ ត្រង់ស៍ ហើយមានន័យថា ផ្ទេរ ។"}, {"q": "តើអ៊ីដ្រូឡាស(Hydrolas) មានន័យដូចម្តេច? តើថ្នាក់រងរបស់ក្រុមនេះឈ្មោះអ្វី?", "a": "អ៊ីដ្រូឡាស(Hydrolas) មានន័យថាអង់ស៊ីមដែលចូលរួមក្នុងប្រតិកម្មអ៊ីដ្រូលីស ។\nថ្នាក់រងរបស់ក្រុមនេះឈ្មោះ កាបូអ៊ីដ្រាស ប្រូតេអាស លីប៉ាស អេស្ទែរ៉ាស ផូស្វាតាស និង ប៉ិបទីដាស ។"}, {"q": "ដូចម្តេចដែលហៅថា អ៊ីដ្រូលីស ?", "a": "អ៊ីដ្រូលីស ជាប្រតិកម្មគីមីដែលម៉ូលេគុលធំមួយត្រូវបានបំបែកជាម៉ូលេគុលតូចៗ ដោយសារ ទឹក និង អង់ស៊ីម ។"}, {"q": "ដូចម្តេចដែលហៅថា លីយ៉ាស (Lyase)? តើថ្នាក់រងរបស់ក្រុមនេះឈ្មោះអ្វី?", "a": "លីយ៉ាស (Lyase) គឺ ជាអង់ស៊ីមដែលបំបែកទឹក កាបូនឌីអុកស៊ីត និង អាម៉ូញាក់ ។\nថ្នាក់រងរបស់ក្រុមនេះឈ្មោះ ដេស៊ីដ្រាតាស និង ខែមីណាលីយ៉ាស ។"}, {"q": "តើអីសូមេរ៉ាសជាអង់ស៊ីមប្រភេទដូចម្តេច? តើថ្នាក់រងរបស់ក្រុមនេះឈ្មោះអ្វី?", "a": "អីសូមេរ៉ាសជាអង់ស៊ីមដែលជម្រុញប្រតិកម្មក្នុងម៉ូលេគុល ដើម្បីរៀបចំម៉ូលេគុលថ្មីឡើងវិញ។\nថ្នាក់រងរបស់ក្រុមនេះឈ្មោះ អេពីមេរ៉ាស និង មុយតាស ។"}, {"q": "តើអេពីមេរ៉ាស ជាអង់ស៊ីមដែលមានសកម្មភាពដូចម្តេច?", "a": "អេពីមេរ៉ាស ជាអង់ស៊ីមដែលជម្រុញប្រតិកម្មក្នុងការរៀបចំបញ្ច្រាសនូវអាតូមកាបូន ។"}, {"q": "តើមុយតាស (Mutase) ជាអង់ស៊ីមដែលមានសកម្មភាពដូចម្តេច?", "a": "មួយកាស (Mutase) ជាអង់ស៊ីមដែលជម្រុញប្រតិកម្មក្នុងម៉ូលេគុល ដោយធ្វើឱ្យប្រែប្រួលនូវ"}, {"q": "តើលីហ្គាស (Ligases) ជាអង់ស៊ីមដែលមានសកម្មភាពដូចម្តេច?តើថ្នាក់រងរបស់ក្រុមនេះឈ្មោះអ្វី?", "a": "បើហ្គាស (Ligases) ជាអង់ស៊ីមដែលចូលរួមប្រតិកម្មបង្កើតសម្ព័ន្ធគីមីរវាងម៉ូលេគុល នាទីនៃបណ្ដុំផ្សេងៗ ។\nស៊ុបស្អាតពីរ ។\nថ្នាក់រងរបស់ក្រុមនេះឈ្មោះ ៖ សាំងតេតាស និង កាបុកស៊ីឡាស ។"}, {"q": "ហេតុអ្វីបានជាគេនិយាយថាអង់ស៊ីមជាប្រូតេអ៊ីនដែលមានសកម្មភាពខ្លាំងក្លា ?", "a": "បានជាគេនិយាយថាអង់ស៊ីមជាប្រតេអ៊ីនដែលមានសកម្មភាពខ្លាំងក្លា ព្រោះអង់ស៊ីមមួយ ចំនួនតូច អាចបង្កើនប្រតិកម្មគីមីមួយចំនួនធំ ។"}, {"q": "ហេតុអ្វីបានជាម៉ូលេគុល ស៊ុបស្អាត អាចបម្លែងជាសារធាតុថ្មី?", "a": "បានជាម៉ូលេគុល ស៊ុបស្អាត អាចបម្លែងជាសារធាតុថ្មី នៅក្នុងសារពាង្គកាយ កាលណា ប្រតិកម្មគីមីថាមពលកើនឡើងដល់កម្រិតកំពូលមួយ ដែលស៊ុបស្អាតត្រូវប្លែងជាសារធាតុមួយថ្មី ។"}, {"q": "តើអង់ស៊ីមមានសកម្មភាពខ្លាំង នៅសីតុណ្ហភាព ប៉ុន្មាន ?", "a": "អង់ស៊ីមមានសកម្មភាពខ្លាំង នៅសីតុណ្ហភាព ពី 40 ទៅ 45 C° ។"}, {"q": "ហេតុអ្វីបានជា សីតុណ្ហភាពខ្ពស់ពេក ឬ ទាបពេក អង់ស៊ីមបាត់បង់គុណភាព ?", "a": "បានជា សីតុណ្ហភាពខ្ពស់ពេក ឬ ទាបពេក អង់ស៊ីមបាត់បង់គុណភាព ព្រោះ អង់ស៊ីមជា ប្រូតេអ៊ីន ។ កាលណា សីតុណ្ហភាពខ្ពស់ពេកសម្ព័ន្ធអ៊ីដ្រូសែនត្រូវបានរលាធ្វើឱ្យប្រូតេអ៊ីនខូច ទ្រង់ទ្រាយ ជាហេតុធ្វើឱ្យប្រូតេអ៊ីនបាត់បង់គុណភាព ។"}, {"q": "ហេតុអ្វីបានជានៅកម្រិត pH តូចជាង 7 ឬ ធំជាង 7 សកម្មភាពអាមីឡាសត្រូវថយចុះ ?", "a": "បានជានៅកម្រិត pH តូចជាង 7 ឬ ធំជាង 7 សកម្មភាពអាមីឡាសត្រូវថយចុះ ព្រោះ អាមីឡាសជាប្រូតេអ៊ីន ដូច្នេះ មជ្ឈដ្ឋានអាស៊ីត ឬ បាសខ្លាំង អាចធ្វើឱ្យសម្ព័ន្ធអ៊ីដ្រូសែនរបស់ប្រូតេអ៊ីន ត្រូវបានបង្អាក់ ឬកាត់ផ្តាច់ ដែលនាំឱ្យបាត់បង់គុណភាព ។"}, {"q": "ដូចម្តេចដែលហៅថា កូអង់ស៊ីម (Coenzyme)?", "a": "កូអង់ស៊ីម (Coenzyme) គឺ ម៉ូលេគុលមិនមែនជាប្រូតេអ៊ីន ។ វាចូលរួមជាមួយអង់ស៊ីមដើម្បីជម្រុញប្រតិកម្មគីមី ។ ឧ. វីតាមីន B កុំផ្លិច (B Complex)។"}, {"q": "ហេតុអ្វីបានជា អង់ស៊ីមជាកតាលីករ ដែលមានប្រតិកម្មបញ្ច្រាសទៅវិញទៅមក ?", "a": "បានជា អង់ស៊ីមជាកតាលីករ ដែលមានប្រតិកម្មបញ្ច្រាសទៅវិញទៅមក ព្រោះវាអាចបំប្លែង ទៅជាសារធាតុថ្មី ហើយសារធាតុថ្មីនោះក៏អាចប្រែប្រួលមកជាសារធាតុដើមវិញ។"}, {"q": "ចូរបង្ហាញថា អង់ស៊ីមទឹកមាត់ មានអំពើ យថា ប្រភេទ ពីរយ៉ាង។", "a": "អង់ស៊ីមទឹកមាត់ មានអំពើ យថា ប្រភេទ ពីរយ៉ាងគឺ៖\nវាជា អង់ស៊ីមអាមីឡាស ព្រោះវាមានអំពើយថាប្រភេទ លើស៊ុបស្អាត អាមីដុង។\nវាជាអ៊ីដ្រូឡាស ព្រោះវាមានអំពើយថា ប្រភេទ ក្នុង ប្រតិកម្ម អ៊ីដ្រូលីស។"}, {"q": "ចូរពណ៌នា ពី លក្ខណៈ របស់ អង់ស៊ីម។", "a": "លក្ខណៈរបស់អង់ស៊ីមដូចជា៖\nអង់ស៊ីមជា ប្រូតេអ៊ីនយថាប្រភេទ\nអង់ស៊ីមជា ប្រតេអ៊ីន ដែលមាន សកម្មភាព ខ្លាំងក្លា\nអង់ស៊ីម ប្រែប្រួលទម្រង់ និងនាទី ទៅតាម សីតុណ្ហភាព ឥទ្ធិពលPH និងកំហាប់ស៊ុបស្អាត\nអង់ស៊ីមជា កាតាលីករដែលជម្រុញនិងបង្កើនល្បឿនប្រតិកម្មគីមី\nអង់ស៊ីមជា កាតាលីករដែលមានប្រតិកម្មបញ្ច្រាសទៅវិញទៅមក\nអង់ស៊ីម ត្រូវការ កូអង់ស៊ីម។"}, {"q": "ហេតុអ្វីបានជាគេនិយាយថា អង់ស៊ីម ជាប្រូតេអ៊ីន ដែលមាន នាទីយថា ប្រភេទ?", "a": "បានជាគេនិយាយថា អង់ស៊ីមជាប្រូតេអ៊ុន យថា ប្រភេទ ព្រោះ៖\nអង់ស៊ីមមួយ ប្រភេទ មាន អំពើ លើ ប្រតិកម្មគីមីតែមួយប្រភេទប៉ុណ្ណោះ ។ វាជាអ៊ីដ្រូឡាស ព្រោះវាមានអំពើយថា ប្រភេទ ក្នុង ប្រតិកម្ម អ៊ីដ្រូលីស។"}, {"q": "តើកត្តាអ្វីខ្លះដែលមានឥទ្ធិពលទៅលើសកម្មភាពរបស់អង់ស៊ីម?", "a": "កត្តាដែលមានឥទ្ធិពលទៅលើសកម្មភាពរបស់អង់ស៊ីម មាន ៖\nកត្តាសីតុណ្ហភាព\nកត្តា អាស៊ីត ឬ បាសខ្លាំង\nកត្តាកំហាប់ស៊ុបស្អាត\nកត្តាកំហាប់ អង់ស៊ីម ។"}];
+const $=id=>document.getElementById(id),cv=$('c'),cx=cv.getContext('2d');
+let W,H;
+function rs(){const d=Math.min(devicePixelRatio||1,2);W=innerWidth;H=innerHeight;cv.width=W*d;cv.height=H*d;cx.setTransform(d,0,0,d,0,0)}
+addEventListener('resize',rs);rs();
+const lerp=(a,b,k)=>a+(b-a)*k,mix=(a,b,k)=>a.map((v,i)=>Math.round(lerp(v,b[i],k))),ease=k=>k*k*(3-2*k);
+let mode='auto',target=0,wl=0,t=0,autoI=0,autoT=0,flash=0,nextFl=3,bolt=null,caught=0,done=false,queue=[],fish=[],hook={x:0,y:0},A=7;
+const rod={s:'idle',f:null,p:0},seq=[0,1,2,1];
+const drops=Array.from({length:220},()=>({x:Math.random(),y:Math.random(),l:10+Math.random()*14,v:600+Math.random()*400}));
+const wm=c=>wl<1?mix(c[0],c[1],wl):mix(c[1],c[2],wl-1),rgb=a=>`rgb(${a})`;
+const surf=x=>H*.4+A*(.6*Math.sin(x*.012+t*1.4)+.4*Math.sin(x*.027-t*2.1)+.35*Math.sin(x*.004+t*.8));
+let tod=.25,birdA=0,ac,master,nb,mute=false;const amb={};
+const KF=[[[120,120,200],[255,190,120],.55],[[90,190,255],[220,244,255],1],[[110,70,150],[255,120,70],.55],[[10,16,46],[34,46,100],.1]];
+function kf(td){const x=td*4,i=Math.floor(x)%4,k=ease(x-Math.floor(x)),a=KF[i],b=KF[(i+1)%4];return{top:mix(a[0],b[0],k),bot:mix(a[1],b[1],k),lt:lerp(a[2],b[2],k)}}
+const stars=Array.from({length:70},()=>[Math.random(),Math.random(),Math.random()]);
+const birds=Array.from({length:7},()=>({x:Math.random()*1200,y:.04+Math.random()*.2,v:40+Math.random()*40,ph:Math.random()*6,s:6+Math.random()*5}));
+const vess=[{x:W*.1,d:1,v:18,k:0},{x:W*.85,d:-1,v:26,k:1}],sharks=[0,1,2].map(i=>({x:W*(.15+.35*i),d:i%2?1:-1,y:H*.4+120+i*55,v:42+i*12,z:[.65,.85,1.05][i]})),dols=[0,1,2].map(i=>({x:W*(.1+.35*i),y:H*.5,px:W*.1,py:H*.5,d:i%2?-1:1,t:i*2.4,a:0,pp:0,h:.13+.04*i}));
+let pb,bb,rt=0;
+function mkBuf(k){const n=ac.sampleRate*4,b=ac.createBuffer(1,n,ac.sampleRate),d=b.getChannelData(0);let l=0,b0=0,b1=0,b2=0;for(let i=0;i<n;i++){const w=Math.random()*2-1;
+if(k==='w')d[i]=w;else if(k==='b'){l=(l+.02*w)/1.02;d[i]=l*3.5}else{b0=.99765*b0+w*.099;b1=.963*b1+w*.2965;b2=.57*b2+w*1.0526;d[i]=(b0+b1+b2+w*.1848)*.2}}return b}
+function initAudio(){if(ac)return;ac=new(window.AudioContext||window.webkitAudioContext)();master=ac.createGain();master.gain.value=mute?0:.9;const cp=ac.createDynamicsCompressor();master.connect(cp);cp.connect(ac.destination);
+nb=mkBuf('w');pb=mkBuf('p');bb=mkBuf('b');
+const lp=(buf,ty,f,q)=>{const s=ac.createBufferSource();s.buffer=buf;s.loop=true;const fl=ac.createBiquadFilter();fl.type=ty;fl.frequency.value=f;fl.Q.value=q||1;const sw=ac.createGain(),g=ac.createGain();sw.gain.value=1;g.gain.value=0;s.connect(fl);fl.connect(sw);sw.connect(g);g.connect(master);s.start();return{g,fl,sw}};
+const lfo=(f,amt,par)=>{const o=ac.createOscillator(),a=ac.createGain();o.frequency.value=f;a.gain.value=amt;o.connect(a);a.connect(par);o.start()};
+amb.wave=lp(bb,'lowpass',700);lfo(.11,.45,amb.wave.sw.gain);lfo(.07,.3,amb.wave.sw.gain);lfo(.13,250,amb.wave.fl.frequency);
+amb.rain=lp(pb,'highpass',1200);amb.rain2=lp(pb,'bandpass',4500,.6);amb.wind=lp(pb,'bandpass',500,.7);lfo(.2,.4,amb.wind.sw.gain)}
+function tone(f1,f2,dur,ty,vol,dl){if(!ac)return;const T=ac.currentTime+(dl||0),o=ac.createOscillator(),g=ac.createGain();o.type=ty||'sine';o.frequency.setValueAtTime(f1,T);o.frequency.exponentialRampToValueAtTime(f2,T+dur);g.gain.setValueAtTime(.0001,T);g.gain.exponentialRampToValueAtTime(vol,T+.006);g.gain.exponentialRampToValueAtTime(.0001,T+dur);o.connect(g);g.connect(master);o.start(T);o.stop(T+dur+.02)}
+function burst(ty,f,dur,vol,dl,f2,buf,q){if(!ac)return;const T=ac.currentTime+(dl||0),s=ac.createBufferSource(),fl=ac.createBiquadFilter(),g=ac.createGain();s.buffer=buf||nb;fl.type=ty;fl.Q.value=q||1;fl.frequency.setValueAtTime(f,T);if(f2)fl.frequency.exponentialRampToValueAtTime(f2,T+dur);
+g.gain.setValueAtTime(.0001,T);g.gain.exponentialRampToValueAtTime(vol,T+Math.min(.01,dur/4));g.gain.exponentialRampToValueAtTime(.0001,T+dur);s.connect(fl);fl.connect(g);g.connect(master);s.start(T,Math.random()*2);s.stop(T+dur+.02)}
+function rumble(d){if(!ac)return;const T=ac.currentTime+d,s=ac.createBufferSource(),fl=ac.createBiquadFilter(),g=ac.createGain();s.buffer=bb;fl.type='lowpass';fl.frequency.value=180;g.gain.setValueAtTime(.0001,T);
+[[.12,1.8],[.7,.7],[1.1,1.4],[1.9,.5],[2.8,.7],[4.5,.0001]].forEach(p=>g.gain.exponentialRampToValueAtTime(p[1],T+p[0]));s.connect(fl);fl.connect(g);g.connect(master);s.start(T);s.stop(T+4.6)}
+const bub=dl=>{const f=300+Math.random()*500;tone(f,f*(1.5+Math.random()),.07+Math.random()*.06,'sine',.07,dl)},
+splashSfx=(dl=0,v=1)=>{burst('highpass',700,.7,.4*v,dl,300,pb);burst('bandpass',500,.35,.5*v,dl,150,bb,.8);for(let i=0;i<5;i++)bub(dl+.08+Math.random()*.5)},
+castSfx=()=>{initAudio();burst('bandpass',500,.35,.35,0,2800,pb,1.5);tone(2600,1700,.3,'sine',.015,.03);burst('bandpass',2200,.55,.12,.1,3200,nb,3)},
+biteSfx=()=>{splashSfx(0,.7);tone(1200,2000,.1,'sawtooth',.03);burst('lowpass',250,.2,.5)},
+reelClick=()=>{burst('bandpass',2600,.02,.22,0,null,nb,4);tone(1500,700,.012,'square',.05)},
+catchSfx=()=>{splashSfx(0,1.3);for(let i=0;i<5;i++){const d=.25+i*.18+Math.random()*.08;burst('lowpass',700,.07,.55-.07*i,d,null,pb);burst('bandpass',1800,.04,.2,d+.01,null,nb)}
+tone(659,659,.25,'triangle',.1,1);tone(784,784,.25,'triangle',.1,1.12);tone(1046,1046,.4,'triangle',.1,1.24)},
+dolSfx=()=>{tone(1800,4200,.35,'sine',.07);tone(4200,2600,.3,'sine',.06,.35);for(let i=0;i<8;i++)burst('highpass',2500,.015,.12,.45+i*.035,null,nb);splashSfx(0,.8)},
+sharkSfx=()=>{burst('lowpass',160,1.6,.5,0,70,bb);tone(60,45,1.2,'sine',.12)},
+gull=()=>{tone(1100,1700,.12,'sawtooth',.025);tone(1700,900,.35,'sawtooth',.025,.12)},
+creak=()=>tone(200,110,.35,'sawtooth',.02),horn=()=>{tone(98,98,1.4,'sawtooth',.05);tone(131,131,1.4,'sawtooth',.04)},
+thunder=()=>{burst('highpass',2500,.12,.5,0,null,nb);rumble(.3+Math.random()*.9)};
+addEventListener('pointerdown',()=>{if(document.hidden)return;initAudio();ac.resume()});
+function stopAudio(){if(ac){try{ac.close()}catch(e){}ac=null}}
+function pauseAudio(){if(ac&&ac.state==='running')ac.suspend()}
+const wake=()=>{if(ac&&!document.hidden)ac.resume()};
+document.addEventListener('visibilitychange',()=>document.hidden?pauseAudio():wake());
+addEventListener('pagehide',stopAudio);addEventListener('beforeunload',stopAudio);addEventListener('blur',pauseAudio);addEventListener('focus',wake);
+if(window.IntersectionObserver)new IntersectionObserver(e=>e[0].isIntersecting?wake():pauseAudio()).observe(cv);
+$('mu').onclick=()=>{mute=!mute;if(master)master.gain.value=mute?0:.8;$('mu').textContent=mute?'🔇':'🔊'};
+$('tm').onclick=()=>{tod=(Math.floor(tod*4+1e-6)+1)%4/4};
+function extra(dt){tod=(tod+dt/100)%1;birds.forEach(b=>b.x+=b.v*dt);
+vess.forEach(s=>{s.x+=s.d*s.v*dt;if(s.x>W+160)s.x=-160;if(s.x<-160)s.x=W+160});
+sharks.forEach(s=>{s.x+=s.d*s.v*dt;if(s.x>W+260||s.x<-260){s.d*=-1;s.y=H*.4+110+Math.random()*Math.max(40,H*.6-230);s.x=s.d>0?-250:W+250;sharkSfx()}});
+dols.forEach(o=>{o.px=o.x;o.py=o.y;o.t+=dt;const p=o.t%7,jp=p<1.6,on=o.x>0&&o.x<W;o.x+=o.d*(jp?170:90)*dt;if(o.x>W+150||o.x<-150)o.d*=-1;
+o.y=surf(o.x)+30-(jp?Math.sin(Math.PI*p/1.6)*H*o.h:0);o.a=lerp(o.a,Math.atan2(o.y-o.py,Math.max(1,Math.abs(o.x-o.px))),.25);
+if(on){if(o.pp>p)dolSfx();else if(o.pp<1.6&&p>=1.6)splashSfx(0,.8)}o.pp=p});
+if(rod.s==='reel'){rt+=dt;if(rt>.08){rt=0;reelClick()}}
+if(ac){const rl=wl<.3?0:Math.min(1,.4+(wl-.3)*.5);amb.wave.g.gain.value=.7+1.6*(A-7)/33;amb.rain.g.gain.value=rl*.3;amb.rain2.g.gain.value=rl*.12;amb.wind.g.gain.value=Math.max(0,wl-.8)*.9;amb.wind.fl.frequency.value=450+250*Math.sin(t*.6);
+if(Math.random()<dt*rl*55)burst('bandpass',2500+Math.random()*3500,.025,.08,0,null,nb,3);
+if(Math.random()<dt*.6)bub(0);
+if(birdA>.3){if(Math.random()<dt*.5){tone(2600,3800,.08,'sine',.04);tone(3000,4200,.08,'sine',.04,.12)}if(Math.random()<dt*.08)gull()}
+if(wl>1&&Math.random()<dt*.5)creak();
+if(Math.random()<dt*.025)horn()}}
+function skyBodies(lt){const wv=1-Math.min(wl,1)*.85,hz=H*.4,sa=Math.max(0,(.6-lt)/.5)*(1-Math.min(1,wl));
+if(sa>.01){cx.fillStyle='#fff';stars.forEach(s=>{cx.globalAlpha=sa*(.5+.5*Math.sin(t*2+s[2]*9));cx.fillRect(s[0]*W,s[1]*hz*.9,s[2]*1.8+.6,s[2]*1.8+.6)});cx.globalAlpha=1}
+const body=(u,col,gl,r)=>{const x=W*(.08+.84*u),y=hz-Math.sin(Math.PI*u)*H*.27+8;cx.globalAlpha=wv;cx.fillStyle=col;cx.shadowColor=gl;cx.shadowBlur=45;cx.beginPath();cx.arc(x,y,r,0,7);cx.fill();cx.shadowBlur=0;cx.globalAlpha=1;return[x,y]};
+if(tod<.5){const u=tod*2,k=Math.min(1,Math.sin(Math.PI*u)*2.5);body(u,rgb(mix([255,130,60],[255,230,100],k)),'#ffd27a',44-10*k)}
+else{const[x,y]=body((tod-.5)*2,'#f4f1de','#cfd8ff',28);cx.globalAlpha=wv*.25;cx.fillStyle='#889';[[-8,-6,6],[7,5,8],[-4,10,4]].forEach(c=>{cx.beginPath();cx.arc(x+c[0],y+c[1],c[2],0,7);cx.fill()});cx.globalAlpha=1}}
+function drawBirds(lt){const a=Math.max(0,1-wl/1.2)*Math.min(1,Math.max(0,(lt-.25)*3));birdA=a;if(a<.02)return;cx.globalAlpha=a;cx.strokeStyle='#2a2438';cx.lineWidth=2;
+birds.forEach(b=>{const x=b.x%(W+100)-50,y=H*b.y+Math.sin(t*.8+b.ph)*10,f=Math.sin(t*9+b.ph)*b.s*.6;cx.beginPath();cx.moveTo(x-b.s,y-f);cx.quadraticCurveTo(x-b.s*.4,y-b.s*.5,x,y);cx.quadraticCurveTo(x+b.s*.4,y-b.s*.5,x+b.s,y-f);cx.stroke()});cx.globalAlpha=1}
+function ships(lt){vess.forEach(s=>{const sc=.5+.12*s.k,y=surf(s.x)-2;cx.save();cx.translate(s.x,y);cx.rotate(Math.atan2(surf(s.x+20)-surf(s.x-20),40)*.9);cx.scale(s.d*sc,sc);
+if(s.k===0){cx.fillStyle='#394b5d';cx.beginPath();cx.moveTo(-100,-14);cx.lineTo(100,-14);cx.lineTo(80,14);cx.lineTo(-90,14);cx.fill();cx.fillStyle='#c0392b';cx.fillRect(-98,-14,196,6);
+['#e67e22','#2e86c1','#27ae60','#f1c40f'].forEach((c,i)=>{cx.fillStyle=c;cx.fillRect(-30+i*30,-30,28,16)});cx.fillStyle='#ecf0f1';cx.fillRect(-76,-44,34,30);cx.fillStyle='#c0392b';cx.fillRect(-64,-56,10,12);
+cx.fillStyle=lt<.5?'#ffe27a':'#7fb3d5';for(let i=0;i<3;i++)cx.fillRect(-72+i*10,-38,7,6)}
+else{cx.fillStyle='#fdfdfd';cx.beginPath();cx.moveTo(-40,-6);cx.lineTo(40,-6);cx.lineTo(28,10);cx.lineTo(-30,10);cx.fill();cx.strokeStyle='#555';cx.lineWidth=2;cx.beginPath();cx.moveTo(0,-6);cx.lineTo(0,-72);cx.stroke();
+cx.fillStyle='#fff';cx.beginPath();cx.moveTo(3,-68);cx.lineTo(3,-12);cx.lineTo(34,-12);cx.fill();cx.fillStyle='#ffb347';cx.beginPath();cx.moveTo(-3,-62);cx.lineTo(-3,-12);cx.lineTo(-28,-12);cx.fill()}
+cx.restore()})}
+function creatures(){const s=sc();sharks.forEach(k=>{cx.save();cx.translate(k.x,k.y+Math.sin(t*1.2+k.v)*8);cx.scale(k.d*s*k.z*.85,s*k.z*.85);cx.rotate(Math.sin(t*3+k.v)*.04);cx.fillStyle='#74879a';
+cx.beginPath();cx.moveTo(80,2);cx.bezierCurveTo(50,-22,-20,-20,-70,-4);cx.lineTo(-95,-26);cx.lineTo(-82,0);cx.lineTo(-98,24);cx.lineTo(-66,6);cx.bezierCurveTo(-20,22,50,20,80,2);cx.fill();
+cx.beginPath();cx.moveTo(14,-17);cx.lineTo(-8,-46);cx.lineTo(-24,-16);cx.fill();cx.fillStyle='#e6edf3';cx.beginPath();cx.ellipse(30,8,40,6,.05,0,Math.PI);cx.fill();cx.fillStyle='#111';cx.beginPath();cx.arc(58,-3,2.5,0,7);cx.fill();cx.restore()});
+dols.forEach(o=>{cx.save();cx.translate(o.x,o.y);cx.scale(o.d*s*.8,s*.8);cx.rotate(o.a);cx.fillStyle='#4f87b8';
+cx.beginPath();cx.moveTo(70,3);cx.lineTo(52,-3);cx.bezierCurveTo(35,-24,-20,-22,-55,-4);cx.lineTo(-78,-18);cx.lineTo(-66,0);cx.lineTo(-78,16);cx.lineTo(-52,5);cx.bezierCurveTo(-15,18,35,15,52,6);cx.closePath();cx.fill();
+cx.beginPath();cx.moveTo(8,-19);cx.lineTo(-8,-38);cx.lineTo(-16,-17);cx.fill();cx.fillStyle='#cfe3f2';cx.beginPath();cx.ellipse(10,7,42,6,0,0,Math.PI);cx.fill();cx.fillStyle='#123';cx.beginPath();cx.arc(40,-4,2.3,0,7);cx.fill();cx.restore()})}
+function lightFx(lt){cx.fillStyle=`rgba(4,8,36,${(1-lt)*.5})`;cx.fillRect(0,0,W,H);const d=Math.min(tod%.5,.5-tod%.5),w=Math.max(0,1-d/.12)*(1-Math.min(1,wl)*.6);if(w>.01){cx.fillStyle=`rgba(255,130,60,${w*.16})`;cx.fillRect(0,0,W,H)}}
+function spawn(){if(!queue.length)return;const y0=H*.4+90,y1=H-45;fish.push({q:queue.pop(),x:Math.random()*W,y:y0+Math.random()*Math.max(y1-y0,30),yy:0,s:22+Math.random()*10,d:Math.random()<.5?1:-1,v:25+Math.random()*35,ph:Math.random()*6,h:Math.floor(Math.random()*360),hk:false})}
+function restart(){queue=QA.map((_,i)=>i).sort(()=>Math.random()-.5);fish=[];caught=0;done=false;for(let i=0;i<8;i++)spawn();score()}
+function score(){$('score').textContent='🐟 '+caught+' / '+QA.length}
+document.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{mode=b.dataset.w;if(mode!=='auto')target=+mode;document.querySelectorAll('.chip').forEach(c=>c.classList.toggle('on',c===b))});
+document.querySelector('[data-w=auto]').classList.add('on');
+const sc=()=>Math.max(.55,Math.min(1,W/800)),bx=()=>W*.4;
+function pose(){const s=sc(),by=surf(bx())-14*s,a=Math.atan2(surf(bx()+30)-surf(bx()-30),60)*.9+Math.sin(t*1.7)*.03*wl;return{by,a,s}}
+function tip(){const p=pose(),lx=115*p.s,ly=-105*p.s;return{x:bx()+Math.cos(p.a)*lx-Math.sin(p.a)*ly,y:p.by+Math.sin(p.a)*lx+Math.cos(p.a)*ly}}
+cv.addEventListener('pointerdown',e=>{if(rod.s!=='idle'||$('m').classList.contains('on'))return;let b=null,bd=1e9;
+for(const f of fish){const d=Math.hypot(e.clientX-(f.x-f.d*f.s*.3),e.clientY-f.yy);if(d<f.s*1.8+18&&d<bd){bd=d;b=f}}
+if(b){b.hk=true;rod.s='cast';rod.f=b;rod.p=0;castSfx()}});
+function openQ(f){const q=QA[f.q];$('qn').textContent='🐟 '+(f.q+1)+' / '+QA.length;$('qt').textContent=q.q;$('ans').textContent=q.a;$('ans').hidden=true;tgl();$('tg').style.display='';$('nx').textContent='Keep fishing · បន្តស្ទូច';$('m').classList.add('on')}
+function tgl(){$('tg').textContent=$('ans').hidden?'👁 Show answer · បង្ហាញចម្លើយ':'🙈 Hide answer · លាក់ចម្លើយ'}
+$('tg').onclick=()=>{$('ans').hidden=!$('ans').hidden;tgl();tone(900,900,.04,'square',.04)};
+$('nx').onclick=()=>{$('m').classList.remove('on');if(done){restart();return}
+fish=fish.filter(f=>f!==rod.f);caught++;score();rod.s='idle';rod.f=null;spawn();
+if(caught>=QA.length){done=true;$('qn').textContent='🎉';$('qt').textContent='You caught all '+QA.length+' fish!';$('ans').hidden=true;$('tg').style.display='none';$('nx').textContent='Play again · លេងម្តងទៀត';$('m').classList.add('on')}};
+function update(dt){t+=dt;
+if(mode==='auto'){autoT+=dt;if(autoT>12){autoT=0;autoI=(autoI+1)%4}target=seq[autoI]}
+wl+=(target-wl)*Math.min(1,dt*.6);A=wl<1?lerp(7,13,wl):lerp(13,40,wl-1);
+for(const f of fish){if(!f.hk){f.x+=f.d*f.v*(1+wl*.4)*dt;if(f.x>W+40)f.d=-1;if(f.x<-40)f.d=1;f.yy=f.y+Math.sin(t*1.5+f.ph)*8}}
+const tp=tip();hook={x:tp.x+Math.sin(t*2)*6,y:tp.y+70+Math.sin(t*3)*4};
+if(rod.s==='cast'||rod.s==='reel'){const f=rod.f;rod.p+=dt/(rod.s==='cast'?.6:.8);const k=ease(Math.min(rod.p,1)),fp={x:f.x,y:f.yy};
+if(rod.s==='cast'){hook={x:lerp(tp.x,fp.x,k),y:lerp(tp.y,fp.y,k)};if(rod.p>=1){rod.s='reel';rod.p=0;biteSfx()}}
+else{hook={x:lerp(fp.x,tp.x,k),y:lerp(fp.y,tp.y,k)};f.x=hook.x;f.yy=hook.y;if(rod.p>=1){rod.s='wait';catchSfx();openQ(f)}}}
+if(rod.s==='wait'){hook={x:tip().x,y:tip().y};}
+for(const d of drops){d.y+=d.v*dt/H;d.x-=d.v*dt/W*(wl>1?.5:.15);if(d.y>1){d.y=0;d.x=Math.random()}if(d.x<0)d.x=1}
+if(wl>1.4){nextFl-=dt;if(nextFl<=0){flash=1;thunder();nextFl=3+Math.random()*5;let x=Math.random()*W,y=0;bolt=[[x,y]];while(y<H*.36){x+=Math.random()*50-25;y+=25+Math.random()*25;bolt.push([x,y])}}}
+flash=Math.max(0,flash-dt*3);extra(dt)}
+function water(off,fill){cx.beginPath();cx.moveTo(0,H);for(let x=0;x<=W+8;x+=8)cx.lineTo(x,surf(x+off)+(off?10:0));cx.lineTo(W,H);cx.closePath();cx.fillStyle=fill;cx.fill();cx.strokeStyle=`rgba(255,255,255,${off?.7:.5})`;cx.lineWidth=2;cx.stroke()}
+function drawFish(f){const x=f.x,y=f.yy,s=f.s,w=Math.sin(t*8+f.ph)*.35;cx.save();cx.translate(x,y);cx.scale(f.d,1);cx.fillStyle=`hsl(${f.h},80%,58%)`;
+cx.beginPath();cx.moveTo(-s,0);cx.lineTo(-s*1.7,-s*(.6+w));cx.lineTo(-s*1.7,s*(.6-w));cx.fill();
+cx.beginPath();cx.ellipse(0,0,s,s*.62,0,0,7);cx.fill();
+cx.fillStyle='#fff';cx.beginPath();cx.arc(s*.55,-s*.12,s*.2,0,7);cx.fill();cx.fillStyle='#111';cx.beginPath();cx.arc(s*.6,-s*.12,s*.09,0,7);cx.fill();cx.restore();
+cx.font=`700 ${Math.round(s*.7)}px Fredoka,sans-serif`;cx.textAlign='center';cx.lineWidth=3;cx.strokeStyle='rgba(0,0,0,.55)';cx.fillStyle='#fff';
+const n=String(f.q+1),nx=x-f.d*s*.2,ny=y+s*.27;cx.strokeText(n,nx,ny);cx.fillText(n,nx,ny)}
+function draw(){
+const K=kf(tod),lt=K.lt,kw=Math.min(1,wl*.9);let g=cx.createLinearGradient(0,0,0,H*.45);
+g.addColorStop(0,rgb(mix(K.top,wm([[90,190,255],[90,106,122],[34,38,50]]),kw)));g.addColorStop(1,rgb(mix(K.bot,wm([[220,244,255],[160,172,182],[78,84,96]]),kw)));cx.fillStyle=g;cx.fillRect(0,0,W,H);
+skyBodies(lt);
+const cc=rgb(wm([[255,255,255],[150,158,168],[70,74,86]]).map(v=>Math.round(v*(.35+.65*lt))));
+for(let i=0;i<5;i++){const x=((i*W*.3+t*(12+i*4))%(W+300))-150,y=H*.06+(i%3)*32;cx.globalAlpha=i<3?.95:Math.min(1,wl);cx.fillStyle=cc;[[0,0,34],[34,6,28],[-32,8,26],[8,-14,26]].forEach(c=>{cx.beginPath();cx.arc(x+c[0],y+c[1],c[2],0,7);cx.fill()})}cx.globalAlpha=1;
+drawBirds(lt);ships(lt);g=cx.createLinearGradient(0,H*.3,0,H);g.addColorStop(0,rgb(wm([[30,160,200],[30,110,140],[16,60,84]])));g.addColorStop(1,rgb(wm([[8,70,120],[8,50,80],[4,24,44]])));water(0,g);
+fish.forEach(drawFish);creatures();
+const p=pose();cx.save();cx.translate(bx(),p.by);cx.rotate(p.a);cx.scale(p.s,p.s);
+cx.fillStyle='#8a4b24';cx.beginPath();cx.moveTo(-85,-12);cx.lineTo(90,-12);cx.quadraticCurveTo(70,32,40,32);cx.lineTo(-50,32);cx.quadraticCurveTo(-80,28,-85,-12);cx.fill();
+cx.fillStyle='#f4d03f';cx.fillRect(-82,-12,170,7);
+cx.fillStyle='#e8453c';cx.fillRect(-28,-52,22,40);cx.fillStyle='#f2c9a0';cx.beginPath();cx.arc(-17,-62,10,0,7);cx.fill();
+cx.fillStyle='#ffd23f';cx.beginPath();cx.ellipse(-17,-70,17,5,0,0,7);cx.fill();cx.fillRect(-26,-80,18,10);
+cx.strokeStyle='#5a3a1a';cx.lineWidth=4;cx.beginPath();cx.moveTo(-6,-34);cx.quadraticCurveTo(60,-60,115,-105);cx.stroke();cx.restore();
+const tp=tip();cx.strokeStyle='rgba(255,255,255,.85)';cx.lineWidth=1.5;cx.beginPath();cx.moveTo(tp.x,tp.y);cx.quadraticCurveTo((tp.x+hook.x)/2,(tp.y+hook.y)/2+10,hook.x,hook.y);cx.stroke();
+cx.strokeStyle='#ddd';cx.lineWidth=2;cx.beginPath();cx.arc(hook.x,hook.y+5,5,0,Math.PI);cx.stroke();
+water(60,`rgba(${wm([[30,160,200],[30,110,140],[16,60,84]])},.3)`);
+lightFx(lt);const n=wl<.3?0:Math.floor(220*Math.min(1,.4+(wl-.3)*.5)),sl=wl>1?.5:.15;
+cx.strokeStyle='rgba(200,225,255,.6)';cx.lineWidth=1.3;cx.beginPath();
+for(let i=0;i<n;i++){const d=drops[i],x=d.x*W,y=d.y*H;cx.moveTo(x,y);cx.lineTo(x+d.l*sl,y-d.l)}cx.stroke();
+if(flash>.35&&bolt){cx.strokeStyle='#fff';cx.lineWidth=3;cx.shadowColor='#bcd';cx.shadowBlur=18;cx.beginPath();bolt.forEach((b,i)=>i?cx.lineTo(b[0],b[1]):cx.moveTo(b[0],b[1]));cx.stroke();cx.shadowBlur=0}
+if(flash>0){cx.fillStyle=`rgba(255,255,255,${flash*.5})`;cx.fillRect(0,0,W,H)}}
+let last=performance.now();
+function loop(n){const dt=Math.min(.05,(n-last)/1000);last=n;update(dt);draw();requestAnimationFrame(loop)}
+restart();requestAnimationFrame(loop);
+</script></body></html>
